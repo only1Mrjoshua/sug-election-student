@@ -1,62 +1,69 @@
 import sqlite3
 import hashlib
 from flask import request
+import os
 
-DATABASE = 'election.db'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, 'election.db')
 
 def init_db():
     """Initialize database with required tables"""
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    
-    # Voters table
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS voters (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT UNIQUE NOT NULL,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            ip_hash TEXT UNIQUE NOT NULL,
-            location_verified BOOLEAN DEFAULT FALSE,
-            registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Votes table
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS votes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            voter_id INTEGER NOT NULL,
-            candidate_id INTEGER NOT NULL,
-            vote_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (voter_id) REFERENCES voters (id)
-        )
-    ''')
-    
-    # Candidates table with sample data
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS candidates (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            position TEXT NOT NULL,
-            department TEXT NOT NULL
-        )
-    ''')
-    
-    # Insert sample candidates if table is empty
-    c.execute('SELECT COUNT(*) FROM candidates')
-    if c.fetchone()[0] == 0:
-        sample_candidates = [
-            ('John Doe', 'President', 'Computer Science'),
-            ('Jane Smith', 'President', 'Electrical Engineering'),
-            ('Mike Johnson', 'Vice President', 'Mechanical Engineering'),
-            ('Sarah Williams', 'Secretary', 'Business Administration'),
-            ('David Brown', 'Treasurer', 'Accounting')
-        ]
-        c.executemany('INSERT INTO candidates (name, position, department) VALUES (?, ?, ?)', sample_candidates)
-    
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        
+        # Voters table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS voters (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT UNIQUE NOT NULL,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                ip_hash TEXT UNIQUE NOT NULL,
+                location_verified BOOLEAN DEFAULT FALSE,
+                registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Votes table
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS votes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                voter_id INTEGER NOT NULL,
+                candidate_id INTEGER NOT NULL,
+                vote_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (voter_id) REFERENCES voters (id)
+            )
+        ''')
+        
+        # Candidates table with sample data
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS candidates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                position TEXT NOT NULL,
+                department TEXT NOT NULL
+            )
+        ''')
+        
+        # Insert sample candidates if table is empty
+        c.execute('SELECT COUNT(*) FROM candidates')
+        if c.fetchone()[0] == 0:
+            sample_candidates = [
+                ('John Doe', 'President', 'Computer Science'),
+                ('Jane Smith', 'President', 'Electrical Engineering'),
+                ('Mike Johnson', 'Vice President', 'Mechanical Engineering'),
+                ('Sarah Williams', 'Secretary', 'Business Administration'),
+                ('David Brown', 'Treasurer', 'Accounting')
+            ]
+            c.executemany('INSERT INTO candidates (name, position, department) VALUES (?, ?, ?)', sample_candidates)
+        
+        conn.commit()
+        conn.close()
+        print(f"✅ Database initialized successfully at: {DATABASE}")
+        
+    except Exception as e:
+        print(f"❌ Database initialization error: {e}")
 
 def verify_location(ip_address):
     """
