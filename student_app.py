@@ -23,7 +23,20 @@ votes_collection = db['votes']
 
 def init_db():
     """Initialize database with sample data if needed"""
-    # Create indexes with error handling
+    # First, clean up any existing problematic indexes
+    try:
+        # Get all current indexes on votes collection
+        current_indexes = list(votes_collection.list_indexes())
+        for index in current_indexes:
+            index_name = index['name']
+            # Remove problematic unique index on voter_id alone if it exists
+            if index_name == 'voter_id_1' and index.get('unique', False):
+                votes_collection.drop_index('voter_id_1')
+                print("✅ Removed problematic unique index on voter_id")
+    except Exception as e:
+        print(f"ℹ️  Index cleanup: {e}")
+
+    # Create correct indexes
     indexes_to_create = [
         (voters_collection, "matric_number", True),
         (voters_collection, "email", True),
@@ -31,16 +44,20 @@ def init_db():
         (voters_collection, "name", False),
         (candidates_collection, "name", False),
         (candidates_collection, "position", False),
-        (votes_collection, "voter_id", True),
         (votes_collection, "candidate_id", False),
+        # Compound unique index - allows multiple votes per voter but only one per position
+        (votes_collection, [("voter_id", 1), ("candidate_position", 1)], True),
     ]
     
     for collection, field, unique in indexes_to_create:
         try:
-            if unique:
-                collection.create_index(field, unique=True)
-            else:
-                collection.create_index(field)
+            if isinstance(field, list):  # Compound index
+                collection.create_index(field, unique=unique, name="unique_vote_per_position")
+            else:  # Single field index
+                if unique:
+                    collection.create_index(field, unique=True)
+                else:
+                    collection.create_index(field)
             print(f"✅ Created index for {field}")
         except Exception as e:
             print(f"⚠️  Index warning for {field}: {e}")
@@ -394,8 +411,11 @@ def check_duplicate_ip(ip_hash):
     return voters_collection.find_one({"ip_hash": ip_hash}) is not None
 
 def verify_email_domain(email):
-    """Verify that email ends with @obonguniversity.com"""
-    return email.lower().endswith('@obonguniversity.com')
+    """Verify that email is valid (removed @obonguniversity.com restriction)"""
+    # Basic email format validation
+    import re
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email.lower()) is not None
 
 def check_duplicate_email(email):
     """Check if email already exists in database"""
@@ -1018,12 +1038,12 @@ def student_home():
                         <div class="form-group">
                             <label for="email">
                                 <i class="fas fa-envelope"></i>
-                                University Email
+                                Email Address
                             </label>
-                            <input type="email" id="email" name="email" required placeholder="your.name@obonguniversity.com">
+                            <input type="email" id="email" name="email" required placeholder="Enter your email address">
                             <div class="validation-message" id="email-validation">
                                 <i class="fas fa-info-circle"></i>
-                                <span>Only @obonguniversity.com emails are accepted</span>
+                                <span>Enter your valid email address</span>
                             </div>
                         </div>
                         
@@ -1200,20 +1220,23 @@ def student_home():
             document.getElementById('vote-confirmation').style.display = 'none';
         }
         
-        // Email validation
+        // Email validation - remove domain restriction
         document.getElementById('email').addEventListener('blur', function() {
             const email = this.value.trim();
             const validation = document.getElementById('email-validation');
             
-            if (email && !email.endsWith('@obonguniversity.com')) {
+            // Basic email validation
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            
+            if (email && !emailPattern.test(email)) {
                 validation.className = 'validation-message validation-invalid';
-                validation.innerHTML = '<i class="fas fa-times-circle"></i> Only @obonguniversity.com emails are accepted';
+                validation.innerHTML = '<i class="fas fa-times-circle"></i> Please enter a valid email address';
             } else if (email) {
                 validation.className = 'validation-message validation-valid';
-                validation.innerHTML = '<i class="fas fa-check-circle"></i> Valid university email';
+                validation.innerHTML = '<i class="fas fa-check-circle"></i> Valid email address';
             } else {
                 validation.className = 'validation-message';
-                validation.innerHTML = '<i class="fas fa-info-circle"></i> Only @obonguniversity.com emails are accepted';
+                validation.innerHTML = '<i class="fas fa-info-circle"></i> Enter your email address';
             }
         });
         
@@ -1242,11 +1265,12 @@ def student_home():
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
             
-            // Validate email domain
-            if (!data.email.endsWith('@obonguniversity.com')) {
+            // Basic email validation (removed domain restriction)
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailPattern.test(data.email)) {
                 const alert = document.getElementById('register-alert');
                 alert.className = 'alert alert-error';
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Only @obonguniversity.com emails are accepted for registration.`;
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please enter a valid email address.`;
                 alert.style.display = 'flex';
                 return;
             }
@@ -1603,7 +1627,6 @@ def student_home():
 </html>
     '''
 
-# Student API Routes
 @app.route('/api/register', methods=['POST'])
 def register_voter():
     """Register a new voter with enhanced verification"""
@@ -1622,14 +1645,14 @@ def register_voter():
                 'message': 'All fields are required'
             }), 400
         
-        # Enhanced email verification
+        # Basic email format validation (removed domain restriction)
         if not verify_email_domain(email):
             return jsonify({
                 'success': False,
-                'message': 'Only @obonguniversity.com email addresses are allowed'
+                'message': 'Please provide a valid email address'
             }), 400
         
-        # Check for duplicate email
+        # Check for duplicate email (KEEP THIS - prevents multiple registrations with same email)
         if check_duplicate_email(email):
             return jsonify({
                 'success': False,
@@ -1827,48 +1850,67 @@ def cast_vote():
         
         vote_ids = []
         
-        # Record all votes
-        for position, candidate_data in votes.items():
-            candidate_id = candidate_data.get('id')
-            candidate_name = candidate_data.get('name')
-            
-            # Verify candidate exists
-            try:
-                candidate_object_id = ObjectId(candidate_id)
-            except:
-                print(f"❌ DEBUG: Invalid candidate ID format - Candidate ID: {candidate_id}")
-                return jsonify({
-                    'success': False,
-                    'message': f'Invalid candidate ID for {position}'
-                }), 400
-            
-            candidate = candidates_collection.find_one({'_id': candidate_object_id})
-            
-            if not candidate:
-                print(f"❌ DEBUG: Candidate not found - Candidate ID: {candidate_id}")
-                return jsonify({
-                    'success': False,
-                    'message': f'Candidate not found for {position}'
-                }), 404
-            
-            # Record the vote
-            vote_data = {
-                'voter_id': voter_id,
-                'candidate_id': candidate_id,
-                'matric_number': matric_number.upper(),
-                'candidate_name': candidate_name,
-                'candidate_position': position,
-                'vote_date': datetime.utcnow()
-            }
-            
-            vote_result = votes_collection.insert_one(vote_data)
-            vote_ids.append(str(vote_result.inserted_id))
-        
-        # Update voter to mark as voted
-        voters_collection.update_one(
-            {'_id': voter['_id']},
-            {'$set': {'has_voted': True}}
-        )
+        # Record all votes in a transaction to ensure atomicity
+        with client.start_session() as session:
+            with session.start_transaction():
+                # Record all votes
+                for position, candidate_data in votes.items():
+                    candidate_id = candidate_data.get('id')
+                    candidate_name = candidate_data.get('name')
+                    
+                    # Verify candidate exists
+                    try:
+                        candidate_object_id = ObjectId(candidate_id)
+                    except:
+                        session.abort_transaction()
+                        print(f"❌ DEBUG: Invalid candidate ID format - Candidate ID: {candidate_id}")
+                        return jsonify({
+                            'success': False,
+                            'message': f'Invalid candidate ID for {position}'
+                        }), 400
+                    
+                    candidate = candidates_collection.find_one({'_id': candidate_object_id})
+                    
+                    if not candidate:
+                        session.abort_transaction()
+                        print(f"❌ DEBUG: Candidate not found - Candidate ID: {candidate_id}")
+                        return jsonify({
+                            'success': False,
+                            'message': f'Candidate not found for {position}'
+                        }), 404
+                    
+                    # Record the vote
+                    vote_data = {
+                        'voter_id': voter_id,
+                        'candidate_id': candidate_id,
+                        'matric_number': matric_number.upper(),
+                        'candidate_name': candidate_name,
+                        'candidate_position': position,
+                        'vote_date': datetime.utcnow()
+                    }
+                    
+                    try:
+                        vote_result = votes_collection.insert_one(vote_data, session=session)
+                        vote_ids.append(str(vote_result.inserted_id))
+                    except Exception as e:
+                        if "duplicate key" in str(e):
+                            session.abort_transaction()
+                            print(f"❌ DEBUG: Duplicate vote for position - Position: {position}")
+                            return jsonify({
+                                'success': False,
+                                'message': f'You have already voted for {position}'
+                            }), 400
+                        else:
+                            raise e
+                
+                # Update voter to mark as voted
+                voters_collection.update_one(
+                    {'_id': voter['_id']},
+                    {'$set': {'has_voted': True}},
+                    session=session
+                )
+                
+                session.commit_transaction()
         
         print(f"✅ DEBUG: All votes successfully recorded - Vote IDs: {vote_ids}")
         return jsonify({
@@ -1972,6 +2014,78 @@ def debug_candidates():
         return jsonify({
             'success': False,
             'message': f'Error fetching candidates: {str(e)}'
+        }), 500
+    
+@app.route('/api/debug/indexes')
+def debug_indexes():
+    """Debug endpoint to see all indexes"""
+    try:
+        indexes = list(votes_collection.list_indexes())
+        
+        indexes_list = []
+        for index in indexes:
+            indexes_list.append({
+                'name': index['name'],
+                'key': index['key'],
+                'unique': index.get('unique', False)
+            })
+        
+        return jsonify({
+            'success': True,
+            'indexes': indexes_list
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching indexes: {str(e)}'
+        }), 500
+
+@app.route('/api/debug/fix-indexes', methods=['POST'])
+def fix_indexes():
+    """Fix the problematic indexes"""
+    try:
+        # Remove the problematic unique index on voter_id alone
+        votes_collection.drop_index('voter_id_1')
+        print("✅ Removed problematic unique index on voter_id")
+        
+        # Ensure the compound index exists
+        votes_collection.create_index([("voter_id", 1), ("candidate_position", 1)], unique=True, name="unique_vote_per_position")
+        print("✅ Ensured compound unique index exists")
+        
+        # Recreate other necessary indexes
+        votes_collection.create_index("candidate_id")
+        print("✅ Recreated candidate_id index")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Indexes fixed successfully!'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fixing indexes: {str(e)}'
+        }), 500
+
+@app.route('/api/debug/reset-votes', methods=['POST'])
+def reset_votes():
+    """Debug endpoint to reset all votes and voter status (for testing only)"""
+    try:
+        # Delete all votes
+        votes_result = votes_collection.delete_many({})
+        # Reset all voters' has_voted status
+        voters_result = voters_collection.update_many({}, {'$set': {'has_voted': False}})
+        
+        return jsonify({
+            'success': True,
+            'message': f'Reset complete: {votes_result.deleted_count} votes deleted, {voters_result.modified_count} voters reset',
+            'votes_deleted': votes_result.deleted_count,
+            'voters_reset': voters_result.modified_count
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error resetting votes: {str(e)}'
         }), 500
 
 @app.route('/api/debug/database')
