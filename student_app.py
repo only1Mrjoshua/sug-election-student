@@ -5,6 +5,7 @@ import hashlib
 import os
 import re
 from bson.objectid import ObjectId
+import requests
 
 app = Flask(__name__)
 
@@ -411,7 +412,7 @@ def check_duplicate_ip(ip_hash):
     return voters_collection.find_one({"ip_hash": ip_hash}) is not None
 
 def verify_email_domain(email):
-    """Verify that email is valid (removed @obonguniversity.com restriction)"""
+    """Verify that email is valid"""
     # Basic email format validation
     import re
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -426,38 +427,70 @@ def check_duplicate_name(name):
     return voters_collection.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}) is not None
 
 def validate_matric_number(matric_number):
-    """Validate matric number format"""
-    # Updated format: U followed by digits, may include TR for transfer students
-    # Examples: U1CS2416TR, U1BC2221
-    pattern = r'^U\d[A-Z]{2}\d{4}(TR)?$'
-    return re.match(pattern, matric_number.upper()) is not None
+    """Validate matric number format - must start with U and be 8 or 10 characters total"""
+    matric_upper = matric_number.upper()
+    
+    # Check if starts with U
+    if not matric_upper.startswith('U'):
+        return False
+    
+    # Check total length (including the 'U')
+    if len(matric_upper) not in [8, 10]:
+        return False
+    
+    return True
 
 def check_duplicate_matric(matric_number):
     """Check if matric number already exists"""
     return voters_collection.find_one({"matric_number": matric_number.upper()}) is not None
 
+def get_ip_location(ip_address):
+    """Get location information for an IP address"""
+    try:
+        # Using ipapi.co for IP geolocation
+        response = requests.get(f'http://ipapi.co/{ip_address}/json/', timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                'city': data.get('city', 'Unknown'),
+                'region': data.get('region', 'Unknown'),
+                'country': data.get('country_name', 'Unknown'),
+                'latitude': data.get('latitude'),
+                'longitude': data.get('longitude'),
+                'isp': data.get('org', 'Unknown')
+            }
+    except Exception as e:
+        print(f"⚠️  IP location lookup failed: {e}")
+    
+    return {
+        'city': 'Unknown',
+        'region': 'Unknown', 
+        'country': 'Unknown',
+        'latitude': None,
+        'longitude': None,
+        'isp': 'Unknown'
+    }
+
 def verify_location(ip_address):
     """Verify if IP is from Obong University campus network"""
-    # For demo purposes, we'll allow all IPs
-    # In production, you would check against known university IP ranges
-    university_ip_ranges = [
-        '192.168.1.',  # Example university network
-        '10.0.0.',     # Another example
-        '172.16.0.',   # And another
+    # Get IP location
+    location = get_ip_location(ip_address)
+    
+    # Check if location matches Obong University areas
+    allowed_locations = [
+        'etim ekpo', 'obong ntak', 'akwa ibom', 'uyo', 'ikot ekpene'
     ]
     
-    # Check if IP matches any university range
-    for ip_range in university_ip_ranges:
-        if ip_address.startswith(ip_range):
+    location_str = f"{location['city']} {location['region']} {location['country']}".lower()
+    
+    # Check if any allowed location is in the location string
+    for allowed_loc in allowed_locations:
+        if allowed_loc in location_str:
+            print(f"📍 Location verified: {location_str}")
             return True
     
-    # For demo, allow localhost and common private IPs
-    if ip_address in ['127.0.0.1', 'localhost'] or ip_address.startswith(('192.168.', '10.0.', '172.16.')):
-        return True
-    
-    # In production, return False for non-university IPs
-    # For now, we'll return True to allow testing
-    return True
+    print(f"📍 Location NOT verified: {location_str}")
+    return False
 
 # Initialize database
 init_db()
@@ -1020,10 +1053,10 @@ def student_home():
                                 <i class="fas fa-id-card"></i>
                                 Matric Number
                             </label>
-                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U1CS****TR or U1BC****" title="Format: U followed by digits and letters (e.g., U1CS****TR for transfer, U1BC**** for regular)">
+                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U1234567 or U123456789" title="Must start with U and be 8 or 10 characters total">
                             <div class="validation-message" id="matric-validation">
                                 <i class="fas fa-info-circle"></i>
-                                <span>Format: U followed by digits and letters (e.g., U1CS****TR, U1BC****)</span>
+                                <span>Format: Must start with U and be exactly 8 or 10 characters total</span>
                             </div>
                         </div>
                         
@@ -1220,7 +1253,7 @@ def student_home():
             document.getElementById('vote-confirmation').style.display = 'none';
         }
         
-        // Email validation - remove domain restriction
+        // Email validation
         document.getElementById('email').addEventListener('blur', function() {
             const email = this.value.trim();
             const validation = document.getElementById('email-validation');
@@ -1244,17 +1277,16 @@ def student_home():
         document.getElementById('matric-number').addEventListener('blur', function() {
             const matric = this.value.trim();
             const validation = document.getElementById('matric-validation');
-            const pattern = /^U\d[A-Z]{2}\d{4}(TR)?$/;
             
-            if (matric && !pattern.test(matric.toUpperCase())) {
+            if (matric && (!matric.toUpperCase().startsWith('U') || (matric.length !== 8 && matric.length !== 10))) {
                 validation.className = 'validation-message validation-invalid';
-                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Use U followed by digits and letters (e.g., U1CS****TR, U1BC****)';
+                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Must start with U and be exactly 8 or 10 characters total';
             } else if (matric) {
                 validation.className = 'validation-message validation-valid';
                 validation.innerHTML = '<i class="fas fa-check-circle"></i> Valid matric number format';
             } else {
                 validation.className = 'validation-message';
-                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: U followed by digits and letters (e.g., U1CS****TR, U1BC****)';
+                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: Must start with U and be exactly 8 or 10 characters total';
             }
         });
         
@@ -1265,7 +1297,7 @@ def student_home():
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
             
-            // Basic email validation (removed domain restriction)
+            // Basic email validation
             const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
             if (!emailPattern.test(data.email)) {
                 const alert = document.getElementById('register-alert');
@@ -1276,11 +1308,10 @@ def student_home():
             }
             
             // Validate matric number format
-            const matricPattern = /^U\d[A-Z]{2}\d{4}(TR)?$/;
-            if (!matricPattern.test(data.matric_number.toUpperCase())) {
+            if (!data.matric_number.toUpperCase().startsWith('U') || (data.matric_number.length !== 8 && data.matric_number.length !== 10)) {
                 const alert = document.getElementById('register-alert');
                 alert.className = 'alert alert-error';
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Use U followed by digits and letters (e.g., U1CS****TR, U1BC****).`;
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Must start with U and be exactly 8 or 10 characters total.`;
                 alert.style.display = 'flex';
                 return;
             }
@@ -1645,14 +1676,14 @@ def register_voter():
                 'message': 'All fields are required'
             }), 400
         
-        # Basic email format validation (removed domain restriction)
+        # Basic email format validation
         if not verify_email_domain(email):
             return jsonify({
                 'success': False,
                 'message': 'Please provide a valid email address'
             }), 400
         
-        # Check for duplicate email (KEEP THIS - prevents multiple registrations with same email)
+        # Check for duplicate email
         if check_duplicate_email(email):
             return jsonify({
                 'success': False,
@@ -1667,10 +1698,11 @@ def register_voter():
             }), 400
         
         # Validate matric number format
+        matric_upper = matric_number.upper()
         if not validate_matric_number(matric_number):
             return jsonify({
                 'success': False,
-                'message': 'Invalid matric number format. Use U followed by digits and letters (e.g., U1CS****TR, U1BC****)'
+                'message': 'Invalid matric number format. Must start with U and be exactly 8 or 10 characters total'
             }), 400
         
         # Check for duplicate matric number
@@ -1680,11 +1712,12 @@ def register_voter():
                 'message': 'This matric number is already registered'
             }), 400
         
-        # Get client IP
+        # Get client IP and location
         client_ip = get_client_ip()
         ip_hash = hash_ip(client_ip)
+        location_info = get_ip_location(client_ip)
         
-        print(f"📍 DEBUG: Client IP: {client_ip}, Hash: {ip_hash[:10]}...")
+        print(f"📍 DEBUG: Client IP: {client_ip}, Location: {location_info['city']}, {location_info['region']}, {location_info['country']}")
         
         # Check for duplicate IP
         if check_duplicate_ip(ip_hash):
@@ -1699,18 +1732,21 @@ def register_voter():
         if not location_verified:
             return jsonify({
                 'success': False,
-                'message': f'Registration only allowed from Obong University campus network',
-                'detected_ip': client_ip
+                'message': f'Registration only allowed from Obong University campus network (Etim Ekpo, Obong Ntak areas). Detected location: {location_info["city"]}, {location_info["region"]}, {location_info["country"]}',
+                'detected_ip': client_ip,
+                'detected_location': location_info
             }), 403
         
         # Register voter in MongoDB
         try:
             voter_data = {
-                'matric_number': matric_number.upper(),
+                'matric_number': matric_upper,
                 'name': name,
                 'email': email.lower(),
                 'faculty': faculty,
+                'ip_address': client_ip,
                 'ip_hash': ip_hash,
+                'location_info': location_info,
                 'location_verified': location_verified,
                 'registration_date': datetime.utcnow(),
                 'has_voted': False
@@ -1720,12 +1756,14 @@ def register_voter():
             voter_id = str(result.inserted_id)
             
             print(f"✅ DEBUG: Voter registered successfully - Voter ID: {voter_id}")
+            print(f"📍 DEBUG: IP: {client_ip}, Location: {location_info}")
             
             return jsonify({
                 'success': True,
                 'message': 'Voter registered successfully! All security checks passed.',
                 'voter_id': voter_id,
                 'location_verified': location_verified,
+                'detected_location': location_info,
                 'email_verified': True,
                 'matric_verified': True
             })
@@ -1957,7 +1995,7 @@ def debug_votes():
 
 @app.route('/api/debug/voters')
 def debug_voters():
-    """Debug endpoint to see all voters"""
+    """Debug endpoint to see all voters with IP and location info"""
     try:
         voters = list(voters_collection.find().sort('registration_date', -1))
         
@@ -1969,7 +2007,9 @@ def debug_voters():
                 'name': voter['name'],
                 'email': voter['email'],
                 'faculty': voter.get('faculty', ''),
+                'ip_address': voter.get('ip_address', ''),
                 'ip_hash': voter['ip_hash'][:10] + '...',
+                'location_info': voter.get('location_info', {}),
                 'location_verified': voter.get('location_verified', False),
                 'has_voted': voter.get('has_voted', False),
                 'registration_date': voter['registration_date'].isoformat() if 'registration_date' in voter else 'Unknown'
@@ -2126,12 +2166,12 @@ if __name__ == '__main__':
     print("🚀 Starting Enhanced Student Portal - Obong University SRC Elections")
     print("✅ MongoDB connected successfully!")
     print("🔒 Enhanced Security Features:")
-    print("   - Email domain verification (@obonguniversity.com only)")
+    print("   - Matric number validation (starts with U, 8 or 10 characters)")
+    print("   - IP-based location verification (Etim Ekpo, Obong Ntak areas only)")
     print("   - Duplicate email detection")
     print("   - Duplicate name detection")
-    print("   - Matric number validation and duplicate detection")
-    print("   - IP address verification")
-    print("   - Location-based access control")
+    print("   - Duplicate matric number detection")
+    print("   - IP address tracking and location display")
     print("🎓 Using Matric Number only (no Student ID)")
     print("🏛️  Faculties: Natural and Applied Science, Arts and Communications, Social Science, Management Science")
     print("🗳️  Election Positions Available:")
