@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: sug-election-student
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn student_app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
