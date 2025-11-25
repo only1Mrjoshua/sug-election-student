@@ -488,7 +488,7 @@ def student_home():
         }
         
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         
@@ -605,7 +605,7 @@ def student_home():
         }
         
         .form-container {
-            max-width: 600px;
+            max-width: 100%;
             margin: 0 auto;
         }
         
@@ -748,12 +748,34 @@ def student_home():
             color: var(--primary-red);
         }
         
+        .position-section {
+            margin-bottom: 40px;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--radius);
+            padding: 25px;
+            background: var(--white);
+        }
+        
+        .position-title {
+            color: var(--primary-green);
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .candidates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
         .candidate-card {
             background: var(--white);
             border: 2px solid var(--light-gray);
             border-radius: var(--radius);
             padding: 20px;
-            margin-bottom: 15px;
             transition: var(--transition);
             cursor: pointer;
         }
@@ -862,6 +884,35 @@ def student_home():
             color: var(--primary-red);
         }
         
+        .selection-summary {
+            background: var(--light-yellow);
+            border: 2px solid var(--primary-yellow);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .summary-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--primary-green);
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .summary-position {
+            font-weight: 600;
+        }
+        
+        .summary-candidate {
+            color: var(--primary-red);
+        }
+        
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -884,6 +935,10 @@ def student_home():
             
             .main-content {
                 padding: 20px;
+            }
+            
+            .candidates-grid {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -936,17 +991,6 @@ def student_home():
                     </p>
                 </div>
                 
-                <div class="info-box">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Enhanced Security Measures:</strong> 
-                    <ul style="margin-top: 10px; margin-left: 20px;">
-                        <li>Only @obonguniversity.com emails accepted</li>
-                        <li>Duplicate email, name, and matric number detection</li>
-                        <li>IP address verification and location checking</li>
-                        <li>Matric number format validation</li>
-                    </ul>
-                </div>
-                
                 <div id="register-alert" class="alert"></div>
                 
                 <div class="form-container">
@@ -956,10 +1000,10 @@ def student_home():
                                 <i class="fas fa-id-card"></i>
                                 Matric Number
                             </label>
-                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U1CS2416TR or U1BC2221" title="Format: U followed by digits and letters (e.g., U1CS2416TR for transfer, U1BC2221 for regular)">
+                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U1CS****TR or U1BC****" title="Format: U followed by digits and letters (e.g., U1CS****TR for transfer, U1BC**** for regular)">
                             <div class="validation-message" id="matric-validation">
                                 <i class="fas fa-info-circle"></i>
-                                <span>Format: U followed by digits and letters (e.g., U1CS2416TR, U1BC2221)</span>
+                                <span>Format: U followed by digits and letters (e.g., U1CS****TR, U1BC****)</span>
                             </div>
                         </div>
                         
@@ -1010,7 +1054,7 @@ def student_home():
                 <div class="page-header">
                     <h2 class="page-title">Cast Your Vote</h2>
                     <p class="page-description">
-                        Vote for your preferred SRC candidates. Remember, you can only vote once!
+                        Vote for your preferred SRC candidates. Select one candidate per position. Remember, you can only vote once!
                     </p>
                 </div>
                 
@@ -1031,10 +1075,15 @@ def student_home():
                                 </div>
                             </div>
                             
+                            <div id="selection-summary" class="selection-summary" style="display: none;">
+                                <div class="summary-title">Your Selections:</div>
+                                <div id="summary-content"></div>
+                            </div>
+                            
                             <div class="form-group">
                                 <label>
                                     <i class="fas fa-users"></i>
-                                    Select Your Candidate
+                                    Select Your Candidates (One per Position)
                                 </label>
                                 <div id="candidates-container">
                                     <div class="loading">
@@ -1082,8 +1131,9 @@ def student_home():
 
     <script>
         const API_BASE = '/api';
-        let selectedCandidateId = null;
+        let selectedCandidates = {}; // Store selected candidates by position
         let isStudentVerified = false;
+        let allCandidates = [];
         
         // Tab navigation
         document.querySelectorAll('.tab').forEach(item => {
@@ -1142,12 +1192,8 @@ def student_home():
             document.getElementById('verification-text').textContent = 'Verification status: ';
             document.getElementById('vote-btn').disabled = true;
             isStudentVerified = false;
-            selectedCandidateId = null;
-            
-            // Reset candidate selection
-            document.querySelectorAll('.candidate-card').forEach(card => {
-                card.classList.remove('selected');
-            });
+            selectedCandidates = {};
+            updateSelectionSummary();
             
             // Show voting form, hide confirmation
             document.getElementById('voting-section').style.display = 'block';
@@ -1175,17 +1221,17 @@ def student_home():
         document.getElementById('matric-number').addEventListener('blur', function() {
             const matric = this.value.trim();
             const validation = document.getElementById('matric-validation');
-            const pattern = /^U\\d[A-Z]{2}\\d{4}(TR)?$/;
+            const pattern = /^U\d[A-Z]{2}\d{4}(TR)?$/;
             
             if (matric && !pattern.test(matric.toUpperCase())) {
                 validation.className = 'validation-message validation-invalid';
-                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Use U followed by digits and letters (e.g., U1CS2416TR, U1BC2221)';
+                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Use U followed by digits and letters (e.g., U1CS****TR, U1BC****)';
             } else if (matric) {
                 validation.className = 'validation-message validation-valid';
                 validation.innerHTML = '<i class="fas fa-check-circle"></i> Valid matric number format';
             } else {
                 validation.className = 'validation-message';
-                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: U followed by digits and letters (e.g., U1CS2416TR, U1BC2221)';
+                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: U followed by digits and letters (e.g., U1CS****TR, U1BC****)';
             }
         });
         
@@ -1206,11 +1252,11 @@ def student_home():
             }
             
             // Validate matric number format
-            const matricPattern = /^U\\d[A-Z]{2}\\d{4}(TR)?$/;
+            const matricPattern = /^U\d[A-Z]{2}\d{4}(TR)?$/;
             if (!matricPattern.test(data.matric_number.toUpperCase())) {
                 const alert = document.getElementById('register-alert');
                 alert.className = 'alert alert-error';
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Use U followed by digits and letters (e.g., U1CS2416TR, U1BC2221).`;
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Use U followed by digits and letters (e.g., U1CS****TR, U1BC****).`;
                 alert.style.display = 'flex';
                 return;
             }
@@ -1340,6 +1386,30 @@ def student_home():
             }
         });
         
+        // Update selection summary
+        function updateSelectionSummary() {
+            const summaryContent = document.getElementById('summary-content');
+            const summaryContainer = document.getElementById('selection-summary');
+            
+            if (Object.keys(selectedCandidates).length === 0) {
+                summaryContainer.style.display = 'none';
+                return;
+            }
+            
+            let summaryHTML = '';
+            for (const [position, candidate] of Object.entries(selectedCandidates)) {
+                summaryHTML += `
+                    <div class="summary-item">
+                        <span class="summary-position">${position}:</span>
+                        <span class="summary-candidate">${candidate.name}</span>
+                    </div>
+                `;
+            }
+            
+            summaryContent.innerHTML = summaryHTML;
+            summaryContainer.style.display = 'block';
+        }
+        
         // Load candidates for voting
         async function loadCandidates() {
             const container = document.getElementById('candidates-container');
@@ -1356,32 +1426,39 @@ def student_home():
                 const result = await response.json();
                 
                 if (result.success) {
+                    allCandidates = result.candidates;
                     container.innerHTML = '';
                     
-                    if (result.candidates && result.candidates.length > 0) {
+                    if (allCandidates && allCandidates.length > 0) {
                         // Group candidates by position
                         const positions = {};
-                        result.candidates.forEach(candidate => {
+                        allCandidates.forEach(candidate => {
                             if (!positions[candidate.position]) {
                                 positions[candidate.position] = [];
                             }
                             positions[candidate.position].push(candidate);
                         });
                         
-                        // Create candidate cards for each position
+                        // Create candidate sections for each position
                         for (const [position, candidates] of Object.entries(positions)) {
-                            const positionHeader = document.createElement('h3');
-                            positionHeader.style.cssText = 'color: var(--primary-green); margin: 25px 0 15px 0; font-size: 1.3rem; font-weight: 700; padding-bottom: 10px; border-bottom: 2px solid var(--light-gray);';
+                            const positionSection = document.createElement('div');
+                            positionSection.className = 'position-section';
+                            
+                            const positionHeader = document.createElement('div');
+                            positionHeader.className = 'position-title';
                             positionHeader.textContent = position;
-                            container.appendChild(positionHeader);
+                            positionSection.appendChild(positionHeader);
+                            
+                            const candidatesGrid = document.createElement('div');
+                            candidatesGrid.className = 'candidates-grid';
                             
                             candidates.forEach(candidate => {
                                 const candidateCard = document.createElement('div');
                                 candidateCard.className = 'candidate-card';
                                 candidateCard.dataset.candidateId = candidate.id;
+                                candidateCard.dataset.position = candidate.position;
                                 candidateCard.innerHTML = `
                                     <div class="candidate-name">${candidate.name}</div>
-                                    <div class="candidate-position">${candidate.position}</div>
                                     ${candidate.faculty ? `<div class="candidate-faculty">${candidate.faculty}</div>` : ''}
                                 `;
                                 
@@ -1394,18 +1471,32 @@ def student_home():
                                         return;
                                     }
                                     
-                                    // Deselect all candidates
-                                    document.querySelectorAll('.candidate-card').forEach(card => {
+                                    const position = this.dataset.position;
+                                    const candidateId = this.dataset.candidateId;
+                                    const candidateName = this.querySelector('.candidate-name').textContent;
+                                    
+                                    // Deselect all candidates for this position
+                                    document.querySelectorAll(`.candidate-card[data-position="${position}"]`).forEach(card => {
                                         card.classList.remove('selected');
                                     });
                                     
                                     // Select this candidate
                                     this.classList.add('selected');
-                                    selectedCandidateId = candidate.id;
+                                    
+                                    // Store selection
+                                    selectedCandidates[position] = {
+                                        id: candidateId,
+                                        name: candidateName
+                                    };
+                                    
+                                    updateSelectionSummary();
                                 });
                                 
-                                container.appendChild(candidateCard);
+                                candidatesGrid.appendChild(candidateCard);
                             });
+                            
+                            positionSection.appendChild(candidatesGrid);
+                            container.appendChild(positionSection);
                         }
                     } else {
                         container.innerHTML = `
@@ -1446,10 +1537,10 @@ def student_home():
                 return;
             }
             
-            if (!selectedCandidateId) {
+            if (Object.keys(selectedCandidates).length === 0) {
                 const alert = document.getElementById('vote-alert');
                 alert.className = 'alert alert-error';
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please select a candidate to vote for.`;
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please select at least one candidate to vote for.`;
                 alert.style.display = 'flex';
                 return;
             }
@@ -1460,9 +1551,10 @@ def student_home():
             
             try {
                 // Show loading state
-                voteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting Vote...';
+                voteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting Votes...';
                 voteBtn.disabled = true;
                 
+                // Submit all votes at once
                 const response = await fetch(API_BASE + '/vote', {
                     method: 'POST',
                     headers: {
@@ -1470,7 +1562,7 @@ def student_home():
                     },
                     body: JSON.stringify({
                         matric_number: matricNumber,
-                        candidate_id: selectedCandidateId
+                        votes: selectedCandidates
                     })
                 });
                 
@@ -1555,7 +1647,7 @@ def register_voter():
         if not validate_matric_number(matric_number):
             return jsonify({
                 'success': False,
-                'message': 'Invalid matric number format. Use U followed by digits and letters (e.g., U1CS2416TR, U1BC2221)'
+                'message': 'Invalid matric number format. Use U followed by digits and letters (e.g., U1CS****TR, U1BC****)'
             }), 400
         
         # Check for duplicate matric number
@@ -1694,19 +1786,19 @@ def verify_student(matric_number):
 
 @app.route('/api/vote', methods=['POST'])
 def cast_vote():
-    """Cast a vote for a candidate"""
+    """Cast votes for multiple candidates at once"""
     try:
         data = request.get_json()
         matric_number = data.get('matric_number')
-        candidate_id = data.get('candidate_id')
+        votes = data.get('votes')  # Dictionary of {position: {id, name}}
         
-        print(f"🔍 DEBUG: Vote attempt received - Matric: {matric_number}, Candidate ID: {candidate_id}")
+        print(f"🔍 DEBUG: Vote attempt received - Matric: {matric_number}, Votes: {len(votes)} positions")
         
-        if not all([matric_number, candidate_id]):
-            print("❌ DEBUG: Missing required fields")
+        if not all([matric_number, votes]) or len(votes) == 0:
+            print("❌ DEBUG: Missing required fields or no votes")
             return jsonify({
                 'success': False,
-                'message': 'Missing required fields'
+                'message': 'Missing required fields or no votes selected'
             }), 400
         
         # Verify voter exists and location was verified
@@ -1733,41 +1825,44 @@ def cast_vote():
                 'message': 'You have already voted'
             }), 400
         
-        # Verify candidate exists
-        try:
-            candidate_object_id = ObjectId(candidate_id)
-        except:
-            print(f"❌ DEBUG: Invalid candidate ID format - Candidate ID: {candidate_id}")
-            return jsonify({
-                'success': False,
-                'message': 'Invalid candidate ID'
-            }), 400
+        vote_ids = []
         
-        candidate = candidates_collection.find_one({'_id': candidate_object_id})
-        
-        if not candidate:
-            print(f"❌ DEBUG: Candidate not found - Candidate ID: {candidate_id}")
-            return jsonify({
-                'success': False,
-                'message': 'Candidate not found'
-            }), 404
-        
-        candidate_name = candidate['name']
-        candidate_position = candidate['position']
-        print(f"✅ DEBUG: Candidate found - Name: {candidate_name}, Position: {candidate_position}")
-        
-        # Record the vote
-        vote_data = {
-            'voter_id': voter_id,
-            'candidate_id': candidate_id,
-            'matric_number': matric_number.upper(),
-            'candidate_name': candidate_name,
-            'candidate_position': candidate_position,
-            'vote_date': datetime.utcnow()
-        }
-        
-        vote_result = votes_collection.insert_one(vote_data)
-        vote_id = str(vote_result.inserted_id)
+        # Record all votes
+        for position, candidate_data in votes.items():
+            candidate_id = candidate_data.get('id')
+            candidate_name = candidate_data.get('name')
+            
+            # Verify candidate exists
+            try:
+                candidate_object_id = ObjectId(candidate_id)
+            except:
+                print(f"❌ DEBUG: Invalid candidate ID format - Candidate ID: {candidate_id}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Invalid candidate ID for {position}'
+                }), 400
+            
+            candidate = candidates_collection.find_one({'_id': candidate_object_id})
+            
+            if not candidate:
+                print(f"❌ DEBUG: Candidate not found - Candidate ID: {candidate_id}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Candidate not found for {position}'
+                }), 404
+            
+            # Record the vote
+            vote_data = {
+                'voter_id': voter_id,
+                'candidate_id': candidate_id,
+                'matric_number': matric_number.upper(),
+                'candidate_name': candidate_name,
+                'candidate_position': position,
+                'vote_date': datetime.utcnow()
+            }
+            
+            vote_result = votes_collection.insert_one(vote_data)
+            vote_ids.append(str(vote_result.inserted_id))
         
         # Update voter to mark as voted
         voters_collection.update_one(
@@ -1775,11 +1870,11 @@ def cast_vote():
             {'$set': {'has_voted': True}}
         )
         
-        print(f"✅ DEBUG: Vote successfully recorded - Vote ID: {vote_id}")
+        print(f"✅ DEBUG: All votes successfully recorded - Vote IDs: {vote_ids}")
         return jsonify({
             'success': True,
-            'message': 'Vote cast successfully!',
-            'vote_id': vote_id
+            'message': f'All {len(votes)} votes cast successfully!',
+            'vote_ids': vote_ids
         })
         
     except Exception as e:
