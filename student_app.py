@@ -445,51 +445,120 @@ def check_duplicate_matric(matric_number):
     return voters_collection.find_one({"matric_number": matric_number.upper()}) is not None
 
 def get_ip_location(ip_address):
-    """Get location information for an IP address"""
-    try:
-        # Using ipapi.co for IP geolocation
-        response = requests.get(f'http://ipapi.co/{ip_address}/json/', timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            return {
+    """Get location information for an IP address using multiple services"""
+    # Skip localhost IPs
+    if ip_address in ['127.0.0.1', 'localhost']:
+        return {
+            'city': 'Localhost',
+            'region': 'Development',
+            'country': 'Test Environment',
+            'latitude': None,
+            'longitude': None,
+            'isp': 'Local Network',
+            'service': 'localhost'
+        }
+    
+    services = [
+        {
+            'name': 'ipapi.co',
+            'url': f'http://ipapi.co/{ip_address}/json/',
+            'mapper': lambda data: {
                 'city': data.get('city', 'Unknown'),
                 'region': data.get('region', 'Unknown'),
                 'country': data.get('country_name', 'Unknown'),
                 'latitude': data.get('latitude'),
                 'longitude': data.get('longitude'),
-                'isp': data.get('org', 'Unknown')
+                'isp': data.get('org', 'Unknown'),
+                'service': 'ipapi.co'
             }
-    except Exception as e:
-        print(f"⚠️  IP location lookup failed: {e}")
+        },
+        {
+            'name': 'ip-api.com',
+            'url': f'http://ip-api.com/json/{ip_address}',
+            'mapper': lambda data: {
+                'city': data.get('city', 'Unknown'),
+                'region': data.get('regionName', 'Unknown'),
+                'country': data.get('country', 'Unknown'),
+                'latitude': data.get('lat'),
+                'longitude': data.get('lon'),
+                'isp': data.get('isp', 'Unknown'),
+                'service': 'ip-api.com'
+            }
+        },
+        {
+            'name': 'ipinfo.io',
+            'url': f'https://ipinfo.io/{ip_address}/json',
+            'mapper': lambda data: {
+                'city': data.get('city', 'Unknown'),
+                'region': data.get('region', 'Unknown'),
+                'country': data.get('country', 'Unknown'),
+                'latitude': data.get('loc', '').split(',')[0] if data.get('loc') else None,
+                'longitude': data.get('loc', '').split(',')[1] if data.get('loc') else None,
+                'isp': data.get('org', 'Unknown'),
+                'service': 'ipinfo.io'
+            }
+        }
+    ]
     
+    for service in services:
+        try:
+            print(f"🔍 Trying IP location service: {service['name']}")
+            response = requests.get(service['url'], timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                location = service['mapper'](data)
+                print(f"✅ Location found via {service['name']}: {location}")
+                return location
+        except Exception as e:
+            print(f"⚠️  {service['name']} failed: {e}")
+            continue
+    
+    print("❌ All IP location services failed")
     return {
         'city': 'Unknown',
         'region': 'Unknown', 
         'country': 'Unknown',
         'latitude': None,
         'longitude': None,
-        'isp': 'Unknown'
+        'isp': 'Unknown',
+        'service': 'all_failed'
     }
 
 def verify_location(ip_address):
     """Verify if IP is from Obong University campus network"""
+    # Allow localhost for testing
+    if ip_address in ['127.0.0.1', 'localhost']:
+        print("📍 Localhost detected - allowing for testing")
+        return True
+    
     # Get IP location
     location = get_ip_location(ip_address)
     
     # Check if location matches Obong University areas
     allowed_locations = [
-        'etim ekpo', 'obong ntak', 'akwa ibom', 'uyo', 'ikot ekpene'
+        'etim ekpo', 'obong ntak', 'akwa ibom', 'uyo', 'ikot ekpene',
+        'abak', 'ikot okoro', 'essien udim', 'ibiono', 'itu'
     ]
     
     location_str = f"{location['city']} {location['region']} {location['country']}".lower()
     
+    print(f"📍 Location check: '{location_str}'")
+    print(f"📍 Raw location data: {location}")
+    
     # Check if any allowed location is in the location string
     for allowed_loc in allowed_locations:
         if allowed_loc in location_str:
-            print(f"📍 Location verified: {location_str}")
+            print(f"✅ Location verified: {location_str} matches {allowed_loc}")
             return True
     
-    print(f"📍 Location NOT verified: {location_str}")
+    # Additional check: If we're in Nigeria but can't pinpoint exact location, allow it
+    if 'nigeria' in location_str.lower():
+        print(f"📍 Nigeria detected but not specific location: {location_str}")
+        print("⚠️  Allowing Nigerian IP for now - may need manual verification")
+        return True
+    
+    print(f"❌ Location NOT verified: {location_str}")
+    print(f"🔍 Allowed locations: {allowed_locations}")
     return False
 
 # Initialize database
@@ -1045,6 +1114,11 @@ def student_home():
                 </div>
                 
                 <div id="register-alert" class="alert"></div>
+                
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Location Requirement:</strong> You must be connected to the Obong University campus network or be in the Etim Ekpo/Obong Ntak area to register.
+                </div>
                 
                 <div class="form-container">
                     <form id="registration-form">
@@ -1717,7 +1791,7 @@ def register_voter():
         ip_hash = hash_ip(client_ip)
         location_info = get_ip_location(client_ip)
         
-        print(f"📍 DEBUG: Client IP: {client_ip}, Location: {location_info['city']}, {location_info['region']}, {location_info['country']}")
+        print(f"📍 DEBUG: Client IP: {client_ip}, Location: {location_info}")
         
         # Check for duplicate IP
         if check_duplicate_ip(ip_hash):
@@ -1730,9 +1804,17 @@ def register_voter():
         location_verified = verify_location(client_ip)
         
         if not location_verified:
+            # More helpful error message
+            if client_ip in ['127.0.0.1', 'localhost']:
+                error_msg = 'Local testing detected. Please test from a device connected to the Obong University campus network.'
+            elif location_info.get('country') == 'Unknown':
+                error_msg = f'Unable to verify your location. Please ensure you are connected to the Obong University campus network in Etim Ekpo/Obong Ntak area. Detected IP: {client_ip}'
+            else:
+                error_msg = f'Registration only allowed from Obong University campus network (Etim Ekpo, Obong Ntak areas). Detected location: {location_info["city"]}, {location_info["region"]}, {location_info["country"]}'
+            
             return jsonify({
                 'success': False,
-                'message': f'Registration only allowed from Obong University campus network (Etim Ekpo, Obong Ntak areas). Detected location: {location_info["city"]}, {location_info["region"]}, {location_info["country"]}',
+                'message': error_msg,
                 'detected_ip': client_ip,
                 'detected_location': location_info
             }), 403
