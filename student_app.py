@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from datetime import datetime
 import hashlib
 import os
+import re
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
@@ -24,41 +25,395 @@ def init_db():
     """Initialize database with sample data if needed"""
     # Create indexes for better performance
     voters_collection.create_index("student_id", unique=True)
+    voters_collection.create_index("email", unique=True)
     voters_collection.create_index("ip_hash")
+    voters_collection.create_index("name")
+    voters_collection.create_index("matric_number", unique=True, sparse=True)
+    
     candidates_collection.create_index("name")
+    candidates_collection.create_index("position")
+    
     votes_collection.create_index("voter_id", unique=True)
     votes_collection.create_index("candidate_id")
     
-    # Add sample candidates if none exist
+    # Add comprehensive sample candidates if none exist
     if candidates_collection.count_documents({}) == 0:
         sample_candidates = [
+            # SRC President (3 candidates)
             {
                 "name": "John Chukwuma",
                 "position": "SRC President",
                 "department": "Computer Science",
+                "faculty": "Natural and Applied Sciences",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Maria Okon",
                 "position": "SRC President", 
                 "department": "Business Administration",
+                "faculty": "Management Sciences",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "David Bassey",
-                "position": "SRC Secretary",
+                "position": "SRC President",
                 "department": "Political Science",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # SRC Vice President (3 candidates)
+            {
+                "name": "Grace Emmanuel",
+                "position": "SRC Vice President",
+                "department": "Accounting",
+                "faculty": "Management Sciences",
                 "created_at": datetime.utcnow()
             },
             {
-                "name": "Grace Emmanuel",
-                "position": "SRC Treasurer",
+                "name": "Samuel Johnson",
+                "position": "SRC Vice President",
+                "department": "Biochemistry",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Fatima Bello",
+                "position": "SRC Vice President",
+                "department": "Mass Communication",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # SRC Secretary (3 candidates)
+            {
+                "name": "Chinwe Okafor",
+                "position": "SRC Secretary",
+                "department": "English Language",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Michael Adebayo",
+                "position": "SRC Secretary",
+                "department": "Computer Science",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Jennifer Musa",
+                "position": "SRC Secretary",
+                "department": "Business Administration",
+                "faculty": "Management Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Senate Members - Natural and Applied Sciences (4 candidates for 2 positions)
+            {
+                "name": "Emeka Nwosu",
+                "position": "Senate Member - Natural and Applied Sciences",
+                "department": "Physics",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Bisi Adekunle",
+                "position": "Senate Member - Natural and Applied Sciences",
+                "department": "Chemistry",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Tunde Ogunleye",
+                "position": "Senate Member - Natural and Applied Sciences",
+                "department": "Mathematics",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Ngozi Eze",
+                "position": "Senate Member - Natural and Applied Sciences",
+                "department": "Microbiology",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Senate Members - Management Sciences (4 candidates for 2 positions)
+            {
+                "name": "Oluwatoyin Bankole",
+                "position": "Senate Member - Management Sciences",
                 "department": "Accounting",
+                "faculty": "Management Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "James Okoro",
+                "position": "Senate Member - Management Sciences",
+                "department": "Economics",
+                "faculty": "Management Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Patience Udoh",
+                "position": "Senate Member - Management Sciences",
+                "department": "Banking & Finance",
+                "faculty": "Management Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Sunday Moses",
+                "position": "Senate Member - Management Sciences",
+                "department": "Business Administration",
+                "faculty": "Management Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Senate Members - Social Sciences (4 candidates for 2 positions)
+            {
+                "name": "Aisha Ibrahim",
+                "position": "Senate Member - Social Sciences",
+                "department": "Political Science",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Peter Okon",
+                "position": "Senate Member - Social Sciences",
+                "department": "Sociology",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Ruth Chukwu",
+                "position": "Senate Member - Social Sciences",
+                "department": "Psychology",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Daniel Akpan",
+                "position": "Senate Member - Social Sciences",
+                "department": "International Relations",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Senate Members - Arts and Humanities (4 candidates for 2 positions)
+            {
+                "name": "Chioma Nwankwo",
+                "position": "Senate Member - Arts and Humanities",
+                "department": "English Language",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Kolawole Adeyemi",
+                "position": "Senate Member - Arts and Humanities",
+                "department": "History",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Mercy Thompson",
+                "position": "Senate Member - Arts and Humanities",
+                "department": "French",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Ibrahim Sani",
+                "position": "Senate Member - Arts and Humanities",
+                "department": "Philosophy",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Representative Members - Information (3 candidates)
+            {
+                "name": "Tech Savvy Smart",
+                "position": "Information Representative",
+                "department": "Computer Science",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Media Pro Grace",
+                "position": "Information Representative",
+                "department": "Mass Communication",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Info King David",
+                "position": "Information Representative",
+                "department": "Library Science",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Representative Members - Social (3 candidates)
+            {
+                "name": "Social Butterfly Amina",
+                "position": "Social Representative",
+                "department": "Sociology",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Event Master Tunde",
+                "position": "Social Representative",
+                "department": "Business Administration",
+                "faculty": "Management Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Party Planner Joy",
+                "position": "Social Representative",
+                "department": "Fine Arts",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Representative Members - Sports (3 candidates)
+            {
+                "name": "Sport Star Mike",
+                "position": "Sports Representative",
+                "department": "Physical Education",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Team Captain Bola",
+                "position": "Sports Representative",
+                "department": "Human Kinetics",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Fitness Queen Sarah",
+                "position": "Sports Representative",
+                "department": "Biochemistry",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Representative Members - Security (3 candidates)
+            {
+                "name": "Safety First James",
+                "position": "Security Representative",
+                "department": "Political Science",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Campus Guard Faith",
+                "position": "Security Representative",
+                "department": "Law",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Watchful Eye Ken",
+                "position": "Security Representative",
+                "department": "Sociology",
+                "faculty": "Social Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Representative Members - Transport (3 candidates)
+            {
+                "name": "Mobility Expert John",
+                "position": "Transport Representative",
+                "department": "Urban Planning",
+                "faculty": "Environmental Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Ride Master Peace",
+                "position": "Transport Representative",
+                "department": "Geography",
+                "faculty": "Environmental Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Commute King Henry",
+                "position": "Transport Representative",
+                "department": "Economics",
+                "faculty": "Management Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Representative Members - Hostel 1 (3 candidates)
+            {
+                "name": "Dorm Leader Tina",
+                "position": "Hostel 1 Representative",
+                "department": "Nursing",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Room Rep Ahmed",
+                "position": "Hostel 1 Representative",
+                "department": "Medicine",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Hostel Hero Linda",
+                "position": "Hostel 1 Representative",
+                "department": "Pharmacy",
+                "faculty": "Natural and Applied Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Representative Members - Hostel 2 (3 candidates)
+            {
+                "name": "Accommodation Ace Paul",
+                "position": "Hostel 2 Representative",
+                "department": "Architecture",
+                "faculty": "Environmental Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Dorm Chief Blessing",
+                "position": "Hostel 2 Representative",
+                "department": "Estate Management",
+                "faculty": "Environmental Sciences",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Hostel Head Victor",
+                "position": "Hostel 2 Representative",
+                "department": "Building Technology",
+                "faculty": "Environmental Sciences",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Representative Members - Chapel (3 candidates)
+            {
+                "name": "Spiritual Guide Peter",
+                "position": "Chapel Representative",
+                "department": "Religious Studies",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Faith Leader Deborah",
+                "position": "Chapel Representative",
+                "department": "Theology",
+                "faculty": "Arts and Humanities",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Morality Mentor Joseph",
+                "position": "Chapel Representative",
+                "department": "Philosophy",
+                "faculty": "Arts and Humanities",
                 "created_at": datetime.utcnow()
             }
         ]
         candidates_collection.insert_many(sample_candidates)
-        print("✅ Sample candidates added to MongoDB")
+        print("✅ Comprehensive sample candidates added to MongoDB")
 
 def get_client_ip():
     """Get client IP address"""
@@ -75,6 +430,28 @@ def hash_ip(ip_address):
 def check_duplicate_ip(ip_hash):
     """Check if IP has already been used for registration"""
     return voters_collection.find_one({"ip_hash": ip_hash}) is not None
+
+def verify_email_domain(email):
+    """Verify that email ends with @obonguniversity.com"""
+    return email.lower().endswith('@obonguniversity.com')
+
+def check_duplicate_email(email):
+    """Check if email already exists in database"""
+    return voters_collection.find_one({"email": email.lower()}) is not None
+
+def check_duplicate_name(name):
+    """Check if name already exists in database (case insensitive)"""
+    return voters_collection.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}) is not None
+
+def validate_matric_number(matric_number):
+    """Validate matric number format"""
+    # Basic format: U followed by 7 digits (e.g., U2023001)
+    pattern = r'^U\d{7}$'
+    return re.match(pattern, matric_number.upper()) is not None
+
+def check_duplicate_matric(matric_number):
+    """Check if matric number already exists"""
+    return voters_collection.find_one({"matric_number": matric_number.upper()}) is not None
 
 def verify_location(ip_address):
     """Verify if IP is from Obong University campus network"""
@@ -403,6 +780,11 @@ def student_home():
             color: #b38f00;
         }
         
+        .badge-error {
+            background: var(--light-red);
+            color: var(--primary-red);
+        }
+        
         .candidate-card {
             background: var(--white);
             border: 2px solid var(--light-gray);
@@ -434,11 +816,19 @@ def student_home():
         .candidate-position {
             font-weight: 600;
             margin-bottom: 5px;
+            color: var(--dark-gray);
         }
         
         .candidate-department {
             color: var(--medium-gray);
             font-size: 0.9rem;
+        }
+        
+        .candidate-faculty {
+            color: var(--primary-red);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 5px;
         }
         
         .vote-confirmation {
@@ -496,6 +886,22 @@ def student_home():
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        
+        .validation-message {
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .validation-valid {
+            color: var(--primary-green);
+        }
+        
+        .validation-invalid {
+            color: var(--primary-red);
         }
         
         /* Responsive Design */
@@ -574,7 +980,13 @@ def student_home():
                 
                 <div class="info-box">
                     <i class="fas fa-info-circle"></i>
-                    <strong>Location Verification:</strong> Your IP address will be automatically verified to ensure you are within the Obong University campus network.
+                    <strong>Enhanced Security Measures:</strong> 
+                    <ul style="margin-top: 10px; margin-left: 20px;">
+                        <li>Only @obonguniversity.com emails accepted</li>
+                        <li>Duplicate email, name, and matric number detection</li>
+                        <li>IP address verification and location checking</li>
+                        <li>Matric number format validation</li>
+                    </ul>
                 </div>
                 
                 <div id="register-alert" class="alert"></div>
@@ -582,11 +994,23 @@ def student_home():
                 <div class="form-container">
                     <form id="registration-form">
                         <div class="form-group">
-                            <label for="student-id">
+                            <label for="matric-number">
                                 <i class="fas fa-id-card"></i>
+                                Matric Number
+                            </label>
+                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U2023001" pattern="U\d{7}" title="Format: U followed by 7 digits (e.g., U2023001)">
+                            <div class="validation-message" id="matric-validation">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Format: U followed by 7 digits (e.g., U2023001)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="student-id">
+                                <i class="fas fa-id-badge"></i>
                                 Student ID Number
                             </label>
-                            <input type="text" id="student-id" name="student_id" required placeholder="e.g., U*******">
+                            <input type="text" id="student-id" name="student_id" required placeholder="e.g., STU2023001">
                         </div>
                         
                         <div class="form-group">
@@ -602,7 +1026,11 @@ def student_home():
                                 <i class="fas fa-envelope"></i>
                                 University Email
                             </label>
-                            <input type="email" id="email" name="email" required placeholder="your.email@obonguniversity.edu.ng">
+                            <input type="email" id="email" name="email" required placeholder="your.name@obonguniversity.com">
+                            <div class="validation-message" id="email-validation">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Only @obonguniversity.com emails are accepted</span>
+                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -620,6 +1048,28 @@ def student_home():
                                 <option value="Economics">Economics</option>
                                 <option value="Mass Communication">Mass Communication</option>
                                 <option value="Accounting">Accounting</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Chemistry">Chemistry</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="English Language">English Language</option>
+                                <option value="History">History</option>
+                                <option value="Sociology">Sociology</option>
+                                <option value="Psychology">Psychology</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="faculty">
+                                <i class="fas fa-university"></i>
+                                Faculty
+                            </label>
+                            <select id="faculty" name="faculty" required>
+                                <option value="">Select your faculty</option>
+                                <option value="Natural and Applied Sciences">Natural and Applied Sciences</option>
+                                <option value="Management Sciences">Management Sciences</option>
+                                <option value="Social Sciences">Social Sciences</option>
+                                <option value="Arts and Humanities">Arts and Humanities</option>
+                                <option value="Environmental Sciences">Environmental Sciences</option>
                             </select>
                         </div>
                         
@@ -780,12 +1230,66 @@ def student_home():
             document.getElementById('vote-confirmation').style.display = 'none';
         }
         
+        // Email validation
+        document.getElementById('email').addEventListener('blur', function() {
+            const email = this.value.trim();
+            const validation = document.getElementById('email-validation');
+            
+            if (email && !email.endsWith('@obonguniversity.com')) {
+                validation.className = 'validation-message validation-invalid';
+                validation.innerHTML = '<i class="fas fa-times-circle"></i> Only @obonguniversity.com emails are accepted';
+            } else if (email) {
+                validation.className = 'validation-message validation-valid';
+                validation.innerHTML = '<i class="fas fa-check-circle"></i> Valid university email';
+            } else {
+                validation.className = 'validation-message';
+                validation.innerHTML = '<i class="fas fa-info-circle"></i> Only @obonguniversity.com emails are accepted';
+            }
+        });
+        
+        // Matric number validation
+        document.getElementById('matric-number').addEventListener('blur', function() {
+            const matric = this.value.trim();
+            const validation = document.getElementById('matric-validation');
+            const pattern = /^U\d{7}$/;
+            
+            if (matric && !pattern.test(matric.toUpperCase())) {
+                validation.className = 'validation-message validation-invalid';
+                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Use U followed by 7 digits (e.g., U2023001)';
+            } else if (matric) {
+                validation.className = 'validation-message validation-valid';
+                validation.innerHTML = '<i class="fas fa-check-circle"></i> Valid matric number format';
+            } else {
+                validation.className = 'validation-message';
+                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: U followed by 7 digits (e.g., U2023001)';
+            }
+        });
+        
         // Registration form handler
         document.getElementById('registration-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
+            
+            // Validate email domain
+            if (!data.email.endsWith('@obonguniversity.com')) {
+                const alert = document.getElementById('register-alert');
+                alert.className = 'alert alert-error';
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Only @obonguniversity.com emails are accepted for registration.`;
+                alert.style.display = 'flex';
+                return;
+            }
+            
+            // Validate matric number format
+            const matricPattern = /^U\d{7}$/;
+            if (!matricPattern.test(data.matric_number.toUpperCase())) {
+                const alert = document.getElementById('register-alert');
+                alert.className = 'alert alert-error';
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Use U followed by 7 digits (e.g., U2023001).`;
+                alert.style.display = 'flex';
+                return;
+            }
             
             const registerBtn = document.getElementById('register-btn');
             const originalText = registerBtn.innerHTML;
@@ -813,6 +1317,10 @@ def student_home():
                     
                     // Clear form
                     e.target.reset();
+                    
+                    // Reset validation messages
+                    document.getElementById('email-validation').className = 'validation-message';
+                    document.getElementById('matric-validation').className = 'validation-message';
                     
                     // Automatically switch to voting tab after successful registration
                     setTimeout(() => {
@@ -855,21 +1363,33 @@ def student_home():
                 const result = await response.json();
                 
                 if (result.success && result.registered) {
-                    document.getElementById('verification-badge').className = 'verification-badge badge-verified';
-                    document.getElementById('verification-badge').textContent = 'Verified';
-                    document.getElementById('vote-btn').disabled = false;
-                    isStudentVerified = true;
-                    
-                    // Show success message
-                    const alert = document.getElementById('vote-alert');
-                    alert.className = 'alert alert-success';
-                    alert.innerHTML = `<i class="fas fa-check-circle"></i> Student verification successful. You can now cast your vote.`;
-                    alert.style.display = 'flex';
-                    
-                    // Hide alert after 3 seconds
-                    setTimeout(() => {
-                        alert.style.display = 'none';
-                    }, 3000);
+                    if (result.has_voted) {
+                        document.getElementById('verification-badge').className = 'verification-badge badge-error';
+                        document.getElementById('verification-badge').textContent = 'Already Voted';
+                        document.getElementById('vote-btn').disabled = true;
+                        isStudentVerified = false;
+                        
+                        const alert = document.getElementById('vote-alert');
+                        alert.className = 'alert alert-error';
+                        alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> This student ID has already voted. Each student can only vote once.`;
+                        alert.style.display = 'flex';
+                    } else {
+                        document.getElementById('verification-badge').className = 'verification-badge badge-verified';
+                        document.getElementById('verification-badge').textContent = 'Verified';
+                        document.getElementById('vote-btn').disabled = false;
+                        isStudentVerified = true;
+                        
+                        // Show success message
+                        const alert = document.getElementById('vote-alert');
+                        alert.className = 'alert alert-success';
+                        alert.innerHTML = `<i class="fas fa-check-circle"></i> Student verification successful. You can now cast your vote.`;
+                        alert.style.display = 'flex';
+                        
+                        // Hide alert after 3 seconds
+                        setTimeout(() => {
+                            alert.style.display = 'none';
+                        }, 3000);
+                    }
                 } else {
                     document.getElementById('verification-badge').className = 'verification-badge badge-pending';
                     document.getElementById('verification-badge').textContent = 'Not Registered';
@@ -927,7 +1447,7 @@ def student_home():
                         // Create candidate cards for each position
                         for (const [position, candidates] of Object.entries(positions)) {
                             const positionHeader = document.createElement('h3');
-                            positionHeader.style.cssText = 'color: var(--primary-green); margin: 25px 0 15px 0; font-size: 1.3rem; font-weight: 700;';
+                            positionHeader.style.cssText = 'color: var(--primary-green); margin: 25px 0 15px 0; font-size: 1.3rem; font-weight: 700; padding-bottom: 10px; border-bottom: 2px solid var(--light-gray);';
                             positionHeader.textContent = position;
                             container.appendChild(positionHeader);
                             
@@ -937,7 +1457,9 @@ def student_home():
                                 candidateCard.dataset.candidateId = candidate.id;
                                 candidateCard.innerHTML = `
                                     <div class="candidate-name">${candidate.name}</div>
+                                    <div class="candidate-position">${candidate.position}</div>
                                     <div class="candidate-department">${candidate.department || 'No department specified'}</div>
+                                    ${candidate.faculty ? `<div class="candidate-faculty">${candidate.faculty}</div>` : ''}
                                 `;
                                 
                                 candidateCard.addEventListener('click', function() {
@@ -1069,20 +1591,57 @@ def student_home():
 # Student API Routes
 @app.route('/api/register', methods=['POST'])
 def register_voter():
-    """Register a new voter with IP verification"""
+    """Register a new voter with enhanced verification"""
     try:
         data = request.get_json()
         student_id = data.get('student_id')
         name = data.get('name')
         email = data.get('email')
         department = data.get('department')
+        faculty = data.get('faculty')
+        matric_number = data.get('matric_number')
         
-        print(f"🔍 DEBUG: Registration attempt - Student ID: {student_id}, Name: {name}")
+        print(f"🔍 DEBUG: Registration attempt - Student ID: {student_id}, Name: {name}, Email: {email}")
         
-        if not all([student_id, name, email, department]):
+        if not all([student_id, name, email, department, faculty, matric_number]):
             return jsonify({
                 'success': False,
-                'message': 'Missing required fields'
+                'message': 'All fields are required'
+            }), 400
+        
+        # Enhanced email verification
+        if not verify_email_domain(email):
+            return jsonify({
+                'success': False,
+                'message': 'Only @obonguniversity.com email addresses are allowed'
+            }), 400
+        
+        # Check for duplicate email
+        if check_duplicate_email(email):
+            return jsonify({
+                'success': False,
+                'message': 'This email address is already registered'
+            }), 400
+        
+        # Check for duplicate name (case insensitive)
+        if check_duplicate_name(name):
+            return jsonify({
+                'success': False,
+                'message': 'This name is already registered'
+            }), 400
+        
+        # Validate matric number format
+        if not validate_matric_number(matric_number):
+            return jsonify({
+                'success': False,
+                'message': 'Invalid matric number format. Use U followed by 7 digits (e.g., U2023001)'
+            }), 400
+        
+        # Check for duplicate matric number
+        if check_duplicate_matric(matric_number):
+            return jsonify({
+                'success': False,
+                'message': 'This matric number is already registered'
             }), 400
         
         # Get client IP
@@ -1112,9 +1671,11 @@ def register_voter():
         try:
             voter_data = {
                 'student_id': student_id,
+                'matric_number': matric_number.upper(),
                 'name': name,
-                'email': email,
+                'email': email.lower(),
                 'department': department,
+                'faculty': faculty,
                 'ip_hash': ip_hash,
                 'location_verified': location_verified,
                 'registration_date': datetime.utcnow(),
@@ -1128,18 +1689,31 @@ def register_voter():
             
             return jsonify({
                 'success': True,
-                'message': 'Voter registered successfully! Location verified.',
+                'message': 'Voter registered successfully! All security checks passed.',
                 'voter_id': voter_id,
-                'location_verified': location_verified
+                'location_verified': location_verified,
+                'email_verified': True,
+                'matric_verified': True
             })
             
         except Exception as e:
             print(f"❌ DEBUG: MongoDB error - {e}")
             if "duplicate key" in str(e):
-                return jsonify({
-                    'success': False,
-                    'message': 'Student ID already registered'
-                }), 400
+                if "student_id" in str(e):
+                    return jsonify({
+                        'success': False,
+                        'message': 'Student ID already registered'
+                    }), 400
+                elif "email" in str(e):
+                    return jsonify({
+                        'success': False,
+                        'message': 'Email address already registered'
+                    }), 400
+                elif "matric_number" in str(e):
+                    return jsonify({
+                        'success': False,
+                        'message': 'Matric number already registered'
+                    }), 400
             else:
                 raise e
             
@@ -1154,7 +1728,7 @@ def register_voter():
 def get_candidates():
     """Get list of all candidates"""
     try:
-        candidates = list(candidates_collection.find({}, {'_id': 1, 'name': 1, 'position': 1, 'department': 1}))
+        candidates = list(candidates_collection.find({}, {'_id': 1, 'name': 1, 'position': 1, 'department': 1, 'faculty': 1}))
         
         candidates_list = []
         for candidate in candidates:
@@ -1162,7 +1736,8 @@ def get_candidates():
                 'id': str(candidate['_id']),
                 'name': candidate['name'],
                 'position': candidate['position'],
-                'department': candidate.get('department', '')
+                'department': candidate.get('department', ''),
+                'faculty': candidate.get('faculty', '')
             })
         
         return jsonify({
@@ -1188,7 +1763,9 @@ def verify_student(student_id):
                 'registered': True,
                 'location_verified': voter.get('location_verified', False),
                 'voter_name': voter['name'],
-                'has_voted': voter.get('has_voted', False)
+                'has_voted': voter.get('has_voted', False),
+                'email': voter.get('email', ''),
+                'matric_number': voter.get('matric_number', '')
             })
         else:
             return jsonify({
@@ -1339,9 +1916,11 @@ def debug_voters():
             voters_list.append({
                 'id': str(voter['_id']),
                 'student_id': voter['student_id'],
+                'matric_number': voter.get('matric_number', ''),
                 'name': voter['name'],
                 'email': voter['email'],
                 'department': voter['department'],
+                'faculty': voter.get('faculty', ''),
                 'ip_hash': voter['ip_hash'][:10] + '...',
                 'location_verified': voter.get('location_verified', False),
                 'has_voted': voter.get('has_voted', False),
@@ -1358,6 +1937,36 @@ def debug_voters():
         return jsonify({
             'success': False,
             'message': f'Error fetching voters: {str(e)}'
+        }), 500
+
+@app.route('/api/debug/candidates')
+def debug_candidates():
+    """Debug endpoint to see all candidates grouped by position"""
+    try:
+        candidates = list(candidates_collection.find().sort('position', 1))
+        
+        candidates_by_position = {}
+        for candidate in candidates:
+            position = candidate['position']
+            if position not in candidates_by_position:
+                candidates_by_position[position] = []
+            
+            candidates_by_position[position].append({
+                'id': str(candidate['_id']),
+                'name': candidate['name'],
+                'department': candidate.get('department', ''),
+                'faculty': candidate.get('faculty', '')
+            })
+        
+        return jsonify({
+            'success': True,
+            'candidates_by_position': candidates_by_position
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error fetching candidates: {str(e)}'
         }), 500
 
 @app.route('/api/debug/database')
@@ -1393,8 +2002,21 @@ def debug_database():
         }), 500
 
 if __name__ == '__main__':
-    print("🚀 Starting Student Portal - Obong University SRC Elections")
+    print("🚀 Starting Enhanced Student Portal - Obong University SRC Elections")
     print("✅ MongoDB connected successfully!")
+    print("🔒 Enhanced Security Features:")
+    print("   - Email domain verification (@obonguniversity.com only)")
+    print("   - Duplicate email detection")
+    print("   - Duplicate name detection")
+    print("   - Matric number validation and duplicate detection")
+    print("   - IP address verification")
+    print("   - Location-based access control")
+    print("🗳️  Election Positions Available:")
+    print("   - SRC President (3 candidates)")
+    print("   - SRC Vice President (3 candidates)")
+    print("   - SRC Secretary (3 candidates)")
+    print("   - Senate Members for each faculty (4 faculties, 4 candidates each)")
+    print("   - Representative Members (Information, Social, Sports, Security, Transport, Hostel 1, Hostel 2, Chapel)")
     print("🌐 Student Portal running at: http://localhost:5001")
     print("🎓 Students can register and vote at this portal")
     print("🐛 Debug tools available at: http://localhost:5001/api/debug endpoints")
