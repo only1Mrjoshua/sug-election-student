@@ -895,7 +895,7 @@ def student_home():
         <div class="header">
             <div class="university-info">
                 <h1>OBONG UNIVERSITY</h1>
-                <div class="subtitle">Student Portal - SRC Elections 2024</div>
+                <div class="subtitle">Student Portal - SRC Elections 2025</div>
             </div>
             <div class="student-badge">
                 <i class="fas fa-graduation-cap"></i>
@@ -1051,7 +1051,7 @@ def student_home():
                     </div>
                     <h3 class="confirmation-title">Vote Submitted Successfully!</h3>
                     <p class="confirmation-message">
-                        Thank you for participating in the Obong University SRC Elections 2024. 
+                        Thank you for participating in the Obong University SRC Elections 2025. 
                         Your vote has been recorded and will be counted.
                     </p>
                     <button class="btn" onclick="showTab('register')">
@@ -1063,7 +1063,7 @@ def student_home():
         </div>
         
         <div class="footer">
-            <p>Obong University SRC Election System &copy; 2024 | Secure Student Portal</p>
+            <p>Obong University SRC Election System &copy; 2025 | Secure Student Portal</p>
             <p>For assistance, contact the SRC Election Committee</p>
         </div>
     </div>
