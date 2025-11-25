@@ -23,18 +23,28 @@ votes_collection = db['votes']
 
 def init_db():
     """Initialize database with sample data if needed"""
-    # Create indexes for better performance
-    voters_collection.create_index("matric_number", unique=True)
-    voters_collection.create_index("email", unique=True)
-    voters_collection.create_index("ip_hash")
-    voters_collection.create_index("name")
+    # Create indexes with error handling
+    indexes_to_create = [
+        (voters_collection, "matric_number", True),
+        (voters_collection, "email", True),
+        (voters_collection, "ip_hash", False),
+        (voters_collection, "name", False),
+        (candidates_collection, "name", False),
+        (candidates_collection, "position", False),
+        (votes_collection, "voter_id", True),
+        (votes_collection, "candidate_id", False),
+    ]
     
-    candidates_collection.create_index("name")
-    candidates_collection.create_index("position")
-    
-    votes_collection.create_index("voter_id", unique=True)
-    votes_collection.create_index("candidate_id")
-    
+    for collection, field, unique in indexes_to_create:
+        try:
+            if unique:
+                collection.create_index(field, unique=True)
+            else:
+                collection.create_index(field)
+            print(f"✅ Created index for {field}")
+        except Exception as e:
+            print(f"⚠️  Index warning for {field}: {e}")
+
     # Add comprehensive sample candidates if none exist
     if candidates_collection.count_documents({}) == 0:
         sample_candidates = [
@@ -364,6 +374,8 @@ def init_db():
         ]
         candidates_collection.insert_many(sample_candidates)
         print("✅ Comprehensive sample candidates added to MongoDB")
+    else:
+        print("✅ Candidates already exist in database")
 
 def get_client_ip():
     """Get client IP address"""
@@ -1163,7 +1175,7 @@ def student_home():
         document.getElementById('matric-number').addEventListener('blur', function() {
             const matric = this.value.trim();
             const validation = document.getElementById('matric-validation');
-            const pattern = /^U\d[A-Z]{2}\d{4}(TR)?$/;
+            const pattern = /^U\\d[A-Z]{2}\\d{4}(TR)?$/;
             
             if (matric && !pattern.test(matric.toUpperCase())) {
                 validation.className = 'validation-message validation-invalid';
@@ -1194,7 +1206,7 @@ def student_home():
             }
             
             // Validate matric number format
-            const matricPattern = /^U\d[A-Z]{2}\d{4}(TR)?$/;
+            const matricPattern = /^U\\d[A-Z]{2}\\d{4}(TR)?$/;
             if (!matricPattern.test(data.matric_number.toUpperCase())) {
                 const alert = document.getElementById('register-alert');
                 alert.className = 'alert alert-error';
@@ -1899,7 +1911,9 @@ def debug_database():
             'message': f'Error checking database: {str(e)}'
         }), 500
 
+# Fix for Render deployment - use PORT environment variable
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5001))
     print("🚀 Starting Enhanced Student Portal - Obong University SRC Elections")
     print("✅ MongoDB connected successfully!")
     print("🔒 Enhanced Security Features:")
@@ -1917,9 +1931,9 @@ if __name__ == '__main__':
     print("   - SRC Secretary (3 candidates)")
     print("   - Senate Members for each faculty (4 faculties, 4 candidates each)")
     print("   - Representative Members (Information, Social, Sports, Security, Transport, Hostel 1, Hostel 2, Chapel)")
-    print("🌐 Student Portal running at: http://localhost:5001")
+    print(f"🌐 Student Portal running at: http://0.0.0.0:{port}")
     print("🎓 Students can register and vote at this portal")
-    print("🐛 Debug tools available at: http://localhost:5001/api/debug endpoints")
+    print("🐛 Debug tools available at: /api/debug endpoints")
     print("\n⏹️  Press Ctrl+C to stop the server")
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=False, host='0.0.0.0', port=port)
