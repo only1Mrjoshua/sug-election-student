@@ -24,11 +24,10 @@ votes_collection = db['votes']
 def init_db():
     """Initialize database with sample data if needed"""
     # Create indexes for better performance
-    voters_collection.create_index("student_id", unique=True)
+    voters_collection.create_index("matric_number", unique=True)
     voters_collection.create_index("email", unique=True)
     voters_collection.create_index("ip_hash")
     voters_collection.create_index("name")
-    voters_collection.create_index("matric_number", unique=True, sparse=True)
     
     candidates_collection.create_index("name")
     candidates_collection.create_index("position")
@@ -43,22 +42,19 @@ def init_db():
             {
                 "name": "John Chukwuma",
                 "position": "SRC President",
-                "department": "Computer Science",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Maria Okon",
                 "position": "SRC President", 
-                "department": "Business Administration",
-                "faculty": "Management Sciences",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "David Bassey",
                 "position": "SRC President",
-                "department": "Political Science",
-                "faculty": "Social Sciences",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             
@@ -66,22 +62,19 @@ def init_db():
             {
                 "name": "Grace Emmanuel",
                 "position": "SRC Vice President",
-                "department": "Accounting",
-                "faculty": "Management Sciences",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Samuel Johnson",
                 "position": "SRC Vice President",
-                "department": "Biochemistry",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Fatima Bello",
                 "position": "SRC Vice President",
-                "department": "Mass Communication",
-                "faculty": "Social Sciences",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             
@@ -89,142 +82,123 @@ def init_db():
             {
                 "name": "Chinwe Okafor",
                 "position": "SRC Secretary",
-                "department": "English Language",
-                "faculty": "Arts and Humanities",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Michael Adebayo",
                 "position": "SRC Secretary",
-                "department": "Computer Science",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Jennifer Musa",
                 "position": "SRC Secretary",
-                "department": "Business Administration",
-                "faculty": "Management Sciences",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             
-            # Senate Members - Natural and Applied Sciences (4 candidates for 2 positions)
+            # Senate Members - Natural and Applied Science (4 candidates for 2 positions)
             {
                 "name": "Emeka Nwosu",
-                "position": "Senate Member - Natural and Applied Sciences",
-                "department": "Physics",
-                "faculty": "Natural and Applied Sciences",
+                "position": "Senate Member - Natural and Applied Science",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Bisi Adekunle",
-                "position": "Senate Member - Natural and Applied Sciences",
-                "department": "Chemistry",
-                "faculty": "Natural and Applied Sciences",
+                "position": "Senate Member - Natural and Applied Science",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Tunde Ogunleye",
-                "position": "Senate Member - Natural and Applied Sciences",
-                "department": "Mathematics",
-                "faculty": "Natural and Applied Sciences",
+                "position": "Senate Member - Natural and Applied Science",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Ngozi Eze",
-                "position": "Senate Member - Natural and Applied Sciences",
-                "department": "Microbiology",
-                "faculty": "Natural and Applied Sciences",
+                "position": "Senate Member - Natural and Applied Science",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             
-            # Senate Members - Management Sciences (4 candidates for 2 positions)
+            # Senate Members - Management Science (4 candidates for 2 positions)
             {
                 "name": "Oluwatoyin Bankole",
-                "position": "Senate Member - Management Sciences",
-                "department": "Accounting",
-                "faculty": "Management Sciences",
+                "position": "Senate Member - Management Science",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "James Okoro",
-                "position": "Senate Member - Management Sciences",
-                "department": "Economics",
-                "faculty": "Management Sciences",
+                "position": "Senate Member - Management Science",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Patience Udoh",
-                "position": "Senate Member - Management Sciences",
-                "department": "Banking & Finance",
-                "faculty": "Management Sciences",
+                "position": "Senate Member - Management Science",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Sunday Moses",
-                "position": "Senate Member - Management Sciences",
-                "department": "Business Administration",
-                "faculty": "Management Sciences",
+                "position": "Senate Member - Management Science",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             
-            # Senate Members - Social Sciences (4 candidates for 2 positions)
+            # Senate Members - Social Science (4 candidates for 2 positions)
             {
                 "name": "Aisha Ibrahim",
-                "position": "Senate Member - Social Sciences",
-                "department": "Political Science",
-                "faculty": "Social Sciences",
+                "position": "Senate Member - Social Science",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Peter Okon",
-                "position": "Senate Member - Social Sciences",
-                "department": "Sociology",
-                "faculty": "Social Sciences",
+                "position": "Senate Member - Social Science",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Ruth Chukwu",
-                "position": "Senate Member - Social Sciences",
-                "department": "Psychology",
-                "faculty": "Social Sciences",
+                "position": "Senate Member - Social Science",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Daniel Akpan",
-                "position": "Senate Member - Social Sciences",
-                "department": "International Relations",
-                "faculty": "Social Sciences",
+                "position": "Senate Member - Social Science",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             
-            # Senate Members - Arts and Humanities (4 candidates for 2 positions)
+            # Senate Members - Arts and Communications (4 candidates for 2 positions)
             {
                 "name": "Chioma Nwankwo",
-                "position": "Senate Member - Arts and Humanities",
-                "department": "English Language",
-                "faculty": "Arts and Humanities",
+                "position": "Senate Member - Arts and Communications",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Kolawole Adeyemi",
-                "position": "Senate Member - Arts and Humanities",
-                "department": "History",
-                "faculty": "Arts and Humanities",
+                "position": "Senate Member - Arts and Communications",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Mercy Thompson",
-                "position": "Senate Member - Arts and Humanities",
-                "department": "French",
-                "faculty": "Arts and Humanities",
+                "position": "Senate Member - Arts and Communications",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Ibrahim Sani",
-                "position": "Senate Member - Arts and Humanities",
-                "department": "Philosophy",
-                "faculty": "Arts and Humanities",
+                "position": "Senate Member - Arts and Communications",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             
@@ -232,22 +206,19 @@ def init_db():
             {
                 "name": "Tech Savvy Smart",
                 "position": "Information Representative",
-                "department": "Computer Science",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Media Pro Grace",
                 "position": "Information Representative",
-                "department": "Mass Communication",
-                "faculty": "Social Sciences",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Info King David",
                 "position": "Information Representative",
-                "department": "Library Science",
-                "faculty": "Arts and Humanities",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             
@@ -255,22 +226,19 @@ def init_db():
             {
                 "name": "Social Butterfly Amina",
                 "position": "Social Representative",
-                "department": "Sociology",
-                "faculty": "Social Sciences",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Event Master Tunde",
                 "position": "Social Representative",
-                "department": "Business Administration",
-                "faculty": "Management Sciences",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Party Planner Joy",
                 "position": "Social Representative",
-                "department": "Fine Arts",
-                "faculty": "Arts and Humanities",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             
@@ -278,22 +246,19 @@ def init_db():
             {
                 "name": "Sport Star Mike",
                 "position": "Sports Representative",
-                "department": "Physical Education",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Team Captain Bola",
                 "position": "Sports Representative",
-                "department": "Human Kinetics",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Fitness Queen Sarah",
                 "position": "Sports Representative",
-                "department": "Biochemistry",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             
@@ -301,22 +266,19 @@ def init_db():
             {
                 "name": "Safety First James",
                 "position": "Security Representative",
-                "department": "Political Science",
-                "faculty": "Social Sciences",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Campus Guard Faith",
                 "position": "Security Representative",
-                "department": "Law",
-                "faculty": "Social Sciences",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Watchful Eye Ken",
                 "position": "Security Representative",
-                "department": "Sociology",
-                "faculty": "Social Sciences",
+                "faculty": "Social Science",
                 "created_at": datetime.utcnow()
             },
             
@@ -324,22 +286,19 @@ def init_db():
             {
                 "name": "Mobility Expert John",
                 "position": "Transport Representative",
-                "department": "Urban Planning",
-                "faculty": "Environmental Sciences",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Ride Master Peace",
                 "position": "Transport Representative",
-                "department": "Geography",
-                "faculty": "Environmental Sciences",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Commute King Henry",
                 "position": "Transport Representative",
-                "department": "Economics",
-                "faculty": "Management Sciences",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             
@@ -347,22 +306,19 @@ def init_db():
             {
                 "name": "Dorm Leader Tina",
                 "position": "Hostel 1 Representative",
-                "department": "Nursing",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Room Rep Ahmed",
                 "position": "Hostel 1 Representative",
-                "department": "Medicine",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Hostel Hero Linda",
                 "position": "Hostel 1 Representative",
-                "department": "Pharmacy",
-                "faculty": "Natural and Applied Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             
@@ -370,22 +326,19 @@ def init_db():
             {
                 "name": "Accommodation Ace Paul",
                 "position": "Hostel 2 Representative",
-                "department": "Architecture",
-                "faculty": "Environmental Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Dorm Chief Blessing",
                 "position": "Hostel 2 Representative",
-                "department": "Estate Management",
-                "faculty": "Environmental Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Hostel Head Victor",
                 "position": "Hostel 2 Representative",
-                "department": "Building Technology",
-                "faculty": "Environmental Sciences",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             
@@ -393,22 +346,19 @@ def init_db():
             {
                 "name": "Spiritual Guide Peter",
                 "position": "Chapel Representative",
-                "department": "Religious Studies",
-                "faculty": "Arts and Humanities",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Faith Leader Deborah",
                 "position": "Chapel Representative",
-                "department": "Theology",
-                "faculty": "Arts and Humanities",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
             {
                 "name": "Morality Mentor Joseph",
                 "position": "Chapel Representative",
-                "department": "Philosophy",
-                "faculty": "Arts and Humanities",
+                "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             }
         ]
@@ -445,8 +395,9 @@ def check_duplicate_name(name):
 
 def validate_matric_number(matric_number):
     """Validate matric number format"""
-    # Basic format: U followed by 7 digits (e.g., U2023001)
-    pattern = r'^U\d{7}$'
+    # Updated format: U followed by digits, may include TR for transfer students
+    # Examples: U1CS2416TR, U1BC2221
+    pattern = r'^U\d[A-Z]{2}\d{4}(TR)?$'
     return re.match(pattern, matric_number.upper()) is not None
 
 def check_duplicate_matric(matric_number):
@@ -819,11 +770,6 @@ def student_home():
             color: var(--dark-gray);
         }
         
-        .candidate-department {
-            color: var(--medium-gray);
-            font-size: 0.9rem;
-        }
-        
         .candidate-faculty {
             color: var(--primary-red);
             font-size: 0.85rem;
@@ -998,19 +944,11 @@ def student_home():
                                 <i class="fas fa-id-card"></i>
                                 Matric Number
                             </label>
-                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U2023001" pattern="U\d{7}" title="Format: U followed by 7 digits (e.g., U2023001)">
+                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U1CS2416TR or U1BC2221" title="Format: U followed by digits and letters (e.g., U1CS2416TR for transfer, U1BC2221 for regular)">
                             <div class="validation-message" id="matric-validation">
                                 <i class="fas fa-info-circle"></i>
-                                <span>Format: U followed by 7 digits (e.g., U2023001)</span>
+                                <span>Format: U followed by digits and letters (e.g., U1CS2416TR, U1BC2221)</span>
                             </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="student-id">
-                                <i class="fas fa-id-badge"></i>
-                                Student ID Number
-                            </label>
-                            <input type="text" id="student-id" name="student_id" required placeholder="e.g., STU2023001">
                         </div>
                         
                         <div class="form-group">
@@ -1034,42 +972,16 @@ def student_home():
                         </div>
                         
                         <div class="form-group">
-                            <label for="department">
-                                <i class="fas fa-building"></i>
-                                Department
-                            </label>
-                            <select id="department" name="department" required>
-                                <option value="">Select your department</option>
-                                <option value="Computer Science">Computer Science</option>
-                                <option value="Business Administration">Business Administration</option>
-                                <option value="Political Science">Political Science</option>
-                                <option value="Microbiology">Microbiology</option>
-                                <option value="Biochemistry">Biochemistry</option>
-                                <option value="Economics">Economics</option>
-                                <option value="Mass Communication">Mass Communication</option>
-                                <option value="Accounting">Accounting</option>
-                                <option value="Physics">Physics</option>
-                                <option value="Chemistry">Chemistry</option>
-                                <option value="Mathematics">Mathematics</option>
-                                <option value="English Language">English Language</option>
-                                <option value="History">History</option>
-                                <option value="Sociology">Sociology</option>
-                                <option value="Psychology">Psychology</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
                             <label for="faculty">
                                 <i class="fas fa-university"></i>
                                 Faculty
                             </label>
                             <select id="faculty" name="faculty" required>
                                 <option value="">Select your faculty</option>
-                                <option value="Natural and Applied Sciences">Natural and Applied Sciences</option>
-                                <option value="Management Sciences">Management Sciences</option>
-                                <option value="Social Sciences">Social Sciences</option>
-                                <option value="Arts and Humanities">Arts and Humanities</option>
-                                <option value="Environmental Sciences">Environmental Sciences</option>
+                                <option value="Natural and Applied Science">Natural and Applied Science</option>
+                                <option value="Arts and Communications">Arts and Communications</option>
+                                <option value="Social Science">Social Science</option>
+                                <option value="Management Science">Management Science</option>
                             </select>
                         </div>
                         
@@ -1096,11 +1008,11 @@ def student_home():
                     <div class="form-container">
                         <form id="voting-form">
                             <div class="form-group">
-                                <label for="voter-student-id">
+                                <label for="voter-matric-number">
                                     <i class="fas fa-id-card"></i>
-                                    Your Student ID
+                                    Your Matric Number
                                 </label>
-                                <input type="text" id="voter-student-id" name="student_id" required placeholder="Enter your registered student ID">
+                                <input type="text" id="voter-matric-number" name="matric_number" required placeholder="Enter your registered matric number">
                                 <div class="verification-status">
                                     <span id="verification-text">Verification status: </span>
                                     <span id="verification-badge" class="verification-badge badge-pending">Not Verified</span>
@@ -1212,7 +1124,7 @@ def student_home():
         
         // Reset voting form
         function resetVotingForm() {
-            document.getElementById('voter-student-id').value = '';
+            document.getElementById('voter-matric-number').value = '';
             document.getElementById('verification-badge').className = 'verification-badge badge-pending';
             document.getElementById('verification-badge').textContent = 'Not Verified';
             document.getElementById('verification-text').textContent = 'Verification status: ';
@@ -1251,17 +1163,17 @@ def student_home():
         document.getElementById('matric-number').addEventListener('blur', function() {
             const matric = this.value.trim();
             const validation = document.getElementById('matric-validation');
-            const pattern = /^U\d{7}$/;
+            const pattern = /^U\d[A-Z]{2}\d{4}(TR)?$/;
             
             if (matric && !pattern.test(matric.toUpperCase())) {
                 validation.className = 'validation-message validation-invalid';
-                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Use U followed by 7 digits (e.g., U2023001)';
+                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Use U followed by digits and letters (e.g., U1CS2416TR, U1BC2221)';
             } else if (matric) {
                 validation.className = 'validation-message validation-valid';
                 validation.innerHTML = '<i class="fas fa-check-circle"></i> Valid matric number format';
             } else {
                 validation.className = 'validation-message';
-                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: U followed by 7 digits (e.g., U2023001)';
+                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: U followed by digits and letters (e.g., U1CS2416TR, U1BC2221)';
             }
         });
         
@@ -1282,11 +1194,11 @@ def student_home():
             }
             
             // Validate matric number format
-            const matricPattern = /^U\d{7}$/;
+            const matricPattern = /^U\d[A-Z]{2}\d{4}(TR)?$/;
             if (!matricPattern.test(data.matric_number.toUpperCase())) {
                 const alert = document.getElementById('register-alert');
                 alert.className = 'alert alert-error';
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Use U followed by 7 digits (e.g., U2023001).`;
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Use U followed by digits and letters (e.g., U1CS2416TR, U1BC2221).`;
                 alert.style.display = 'flex';
                 return;
             }
@@ -1343,11 +1255,11 @@ def student_home():
             }
         });
         
-        // Verify student registration when ID is entered
-        document.getElementById('voter-student-id').addEventListener('blur', async function() {
-            const studentId = this.value.trim();
+        // Verify student registration when matric number is entered
+        document.getElementById('voter-matric-number').addEventListener('blur', async function() {
+            const matricNumber = this.value.trim();
             
-            if (!studentId) {
+            if (!matricNumber) {
                 document.getElementById('verification-badge').className = 'verification-badge badge-pending';
                 document.getElementById('verification-badge').textContent = 'Not Verified';
                 document.getElementById('vote-btn').disabled = true;
@@ -1359,7 +1271,7 @@ def student_home():
                 document.getElementById('verification-badge').className = 'verification-badge badge-pending';
                 document.getElementById('verification-badge').textContent = 'Verifying...';
                 
-                const response = await fetch(`${API_BASE}/verify-student/${studentId}`);
+                const response = await fetch(`${API_BASE}/verify-student/${matricNumber}`);
                 const result = await response.json();
                 
                 if (result.success && result.registered) {
@@ -1371,7 +1283,7 @@ def student_home():
                         
                         const alert = document.getElementById('vote-alert');
                         alert.className = 'alert alert-error';
-                        alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> This student ID has already voted. Each student can only vote once.`;
+                        alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> This matric number has already voted. Each student can only vote once.`;
                         alert.style.display = 'flex';
                     } else {
                         document.getElementById('verification-badge').className = 'verification-badge badge-verified';
@@ -1399,7 +1311,7 @@ def student_home():
                     // Show error message
                     const alert = document.getElementById('vote-alert');
                     alert.className = 'alert alert-error';
-                    alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Student ID not found. Please register first.`;
+                    alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Matric number not found. Please register first.`;
                     alert.style.display = 'flex';
                 }
             } catch (error) {
@@ -1458,7 +1370,6 @@ def student_home():
                                 candidateCard.innerHTML = `
                                     <div class="candidate-name">${candidate.name}</div>
                                     <div class="candidate-position">${candidate.position}</div>
-                                    <div class="candidate-department">${candidate.department || 'No department specified'}</div>
                                     ${candidate.faculty ? `<div class="candidate-faculty">${candidate.faculty}</div>` : ''}
                                 `;
                                 
@@ -1466,7 +1377,7 @@ def student_home():
                                     if (!isStudentVerified) {
                                         const alert = document.getElementById('vote-alert');
                                         alert.className = 'alert alert-error';
-                                        alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please verify your student ID first.`;
+                                        alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please verify your matric number first.`;
                                         alert.style.display = 'flex';
                                         return;
                                     }
@@ -1518,7 +1429,7 @@ def student_home():
             if (!isStudentVerified) {
                 const alert = document.getElementById('vote-alert');
                 alert.className = 'alert alert-error';
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please verify your student ID first.`;
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please verify your matric number first.`;
                 alert.style.display = 'flex';
                 return;
             }
@@ -1531,7 +1442,7 @@ def student_home():
                 return;
             }
             
-            const studentId = document.getElementById('voter-student-id').value;
+            const matricNumber = document.getElementById('voter-matric-number').value;
             const voteBtn = document.getElementById('vote-btn');
             const originalText = voteBtn.innerHTML;
             
@@ -1546,7 +1457,7 @@ def student_home():
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        student_id: studentId,
+                        matric_number: matricNumber,
                         candidate_id: selectedCandidateId
                     })
                 });
@@ -1594,16 +1505,14 @@ def register_voter():
     """Register a new voter with enhanced verification"""
     try:
         data = request.get_json()
-        student_id = data.get('student_id')
         name = data.get('name')
         email = data.get('email')
-        department = data.get('department')
         faculty = data.get('faculty')
         matric_number = data.get('matric_number')
         
-        print(f"🔍 DEBUG: Registration attempt - Student ID: {student_id}, Name: {name}, Email: {email}")
+        print(f"🔍 DEBUG: Registration attempt - Matric: {matric_number}, Name: {name}, Email: {email}")
         
-        if not all([student_id, name, email, department, faculty, matric_number]):
+        if not all([name, email, faculty, matric_number]):
             return jsonify({
                 'success': False,
                 'message': 'All fields are required'
@@ -1634,7 +1543,7 @@ def register_voter():
         if not validate_matric_number(matric_number):
             return jsonify({
                 'success': False,
-                'message': 'Invalid matric number format. Use U followed by 7 digits (e.g., U2023001)'
+                'message': 'Invalid matric number format. Use U followed by digits and letters (e.g., U1CS2416TR, U1BC2221)'
             }), 400
         
         # Check for duplicate matric number
@@ -1670,11 +1579,9 @@ def register_voter():
         # Register voter in MongoDB
         try:
             voter_data = {
-                'student_id': student_id,
                 'matric_number': matric_number.upper(),
                 'name': name,
                 'email': email.lower(),
-                'department': department,
                 'faculty': faculty,
                 'ip_hash': ip_hash,
                 'location_verified': location_verified,
@@ -1699,12 +1606,7 @@ def register_voter():
         except Exception as e:
             print(f"❌ DEBUG: MongoDB error - {e}")
             if "duplicate key" in str(e):
-                if "student_id" in str(e):
-                    return jsonify({
-                        'success': False,
-                        'message': 'Student ID already registered'
-                    }), 400
-                elif "email" in str(e):
+                if "email" in str(e):
                     return jsonify({
                         'success': False,
                         'message': 'Email address already registered'
@@ -1728,7 +1630,7 @@ def register_voter():
 def get_candidates():
     """Get list of all candidates"""
     try:
-        candidates = list(candidates_collection.find({}, {'_id': 1, 'name': 1, 'position': 1, 'department': 1, 'faculty': 1}))
+        candidates = list(candidates_collection.find({}, {'_id': 1, 'name': 1, 'position': 1, 'faculty': 1}))
         
         candidates_list = []
         for candidate in candidates:
@@ -1736,7 +1638,6 @@ def get_candidates():
                 'id': str(candidate['_id']),
                 'name': candidate['name'],
                 'position': candidate['position'],
-                'department': candidate.get('department', ''),
                 'faculty': candidate.get('faculty', '')
             })
         
@@ -1751,11 +1652,11 @@ def get_candidates():
             'message': f'Error fetching candidates: {str(e)}'
         }), 500
 
-@app.route('/api/verify-student/<student_id>', methods=['GET'])
-def verify_student(student_id):
+@app.route('/api/verify-student/<matric_number>', methods=['GET'])
+def verify_student(matric_number):
     """Verify if a student is registered and location verified"""
     try:
-        voter = voters_collection.find_one({'student_id': student_id})
+        voter = voters_collection.find_one({'matric_number': matric_number.upper()})
         
         if voter:
             return jsonify({
@@ -1784,12 +1685,12 @@ def cast_vote():
     """Cast a vote for a candidate"""
     try:
         data = request.get_json()
-        student_id = data.get('student_id')
+        matric_number = data.get('matric_number')
         candidate_id = data.get('candidate_id')
         
-        print(f"🔍 DEBUG: Vote attempt received - Student ID: {student_id}, Candidate ID: {candidate_id}")
+        print(f"🔍 DEBUG: Vote attempt received - Matric: {matric_number}, Candidate ID: {candidate_id}")
         
-        if not all([student_id, candidate_id]):
+        if not all([matric_number, candidate_id]):
             print("❌ DEBUG: Missing required fields")
             return jsonify({
                 'success': False,
@@ -1798,12 +1699,12 @@ def cast_vote():
         
         # Verify voter exists and location was verified
         voter = voters_collection.find_one({
-            'student_id': student_id, 
+            'matric_number': matric_number.upper(), 
             'location_verified': True
         })
         
         if not voter:
-            print(f"❌ DEBUG: Voter not found or not verified - Student ID: {student_id}")
+            print(f"❌ DEBUG: Voter not found or not verified - Matric: {matric_number}")
             return jsonify({
                 'success': False,
                 'message': 'Voter not found or location not verified. Please register first.'
@@ -1847,7 +1748,7 @@ def cast_vote():
         vote_data = {
             'voter_id': voter_id,
             'candidate_id': candidate_id,
-            'student_id': student_id,
+            'matric_number': matric_number.upper(),
             'candidate_name': candidate_name,
             'candidate_position': candidate_position,
             'vote_date': datetime.utcnow()
@@ -1887,7 +1788,7 @@ def debug_votes():
         for vote in votes:
             votes_list.append({
                 'vote_id': str(vote['_id']),
-                'student_id': vote['student_id'],
+                'matric_number': vote['matric_number'],
                 'candidate_name': vote.get('candidate_name', 'Unknown'),
                 'position': vote.get('candidate_position', 'Unknown'),
                 'vote_date': vote['vote_date'].isoformat() if 'vote_date' in vote else 'Unknown'
@@ -1915,11 +1816,9 @@ def debug_voters():
         for voter in voters:
             voters_list.append({
                 'id': str(voter['_id']),
-                'student_id': voter['student_id'],
                 'matric_number': voter.get('matric_number', ''),
                 'name': voter['name'],
                 'email': voter['email'],
-                'department': voter['department'],
                 'faculty': voter.get('faculty', ''),
                 'ip_hash': voter['ip_hash'][:10] + '...',
                 'location_verified': voter.get('location_verified', False),
@@ -1954,7 +1853,6 @@ def debug_candidates():
             candidates_by_position[position].append({
                 'id': str(candidate['_id']),
                 'name': candidate['name'],
-                'department': candidate.get('department', ''),
                 'faculty': candidate.get('faculty', '')
             })
         
@@ -2011,6 +1909,8 @@ if __name__ == '__main__':
     print("   - Matric number validation and duplicate detection")
     print("   - IP address verification")
     print("   - Location-based access control")
+    print("🎓 Using Matric Number only (no Student ID)")
+    print("🏛️  Faculties: Natural and Applied Science, Arts and Communications, Social Science, Management Science")
     print("🗳️  Election Positions Available:")
     print("   - SRC President (3 candidates)")
     print("   - SRC Vice President (3 candidates)")
