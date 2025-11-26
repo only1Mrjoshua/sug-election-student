@@ -256,7 +256,7 @@ init_db()
 @app.route('/')
 def student_home():
     """Student portal home page"""
-    return render_template('student_portal.html')
+    return render_template('index.html')
 
 @app.route('/api/election-status', methods=['GET'])
 def get_election_status_api():
