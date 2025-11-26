@@ -1170,10 +1170,6 @@ def student_home():
                 
                 <div id="register-alert" class="alert"></div>
                 
-                <div class="info-box">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Location Requirement:</strong> You must be connected to the Obong University campus network or be in the Etim Ekpo/Obong Ntak area to register.
-                </div>
                 
                 <div class="form-container">
                     <form id="registration-form">
