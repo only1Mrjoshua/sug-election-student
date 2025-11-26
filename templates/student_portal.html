@@ -94,6 +94,37 @@
         box-shadow: 0 4px 8px rgba(44, 138, 69, 0.3);
       }
 
+      .election-status {
+        background: var(--light-yellow);
+        border: 2px solid var(--primary-yellow);
+        border-radius: 8px;
+        padding: 12px 20px;
+        margin: 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        color: var(--dark-gray);
+      }
+
+      .election-status.ongoing {
+        background: var(--light-green);
+        border-color: var(--primary-green);
+        color: var(--primary-green);
+      }
+
+      .election-status.paused {
+        background: var(--light-yellow);
+        border-color: var(--primary-yellow);
+        color: #b38f00;
+      }
+
+      .election-status.ended {
+        background: var(--light-red);
+        border-color: var(--primary-red);
+        color: var(--primary-red);
+      }
+
       .main-content {
         background: var(--white);
         border-radius: 0 0 var(--radius) var(--radius);
@@ -566,6 +597,12 @@
       </div>
 
       <div class="main-content">
+        <!-- Election Status Banner -->
+        <div id="election-status-banner" class="election-status">
+          <i class="fas fa-info-circle"></i>
+          <span id="election-status-text">Checking election status...</span>
+        </div>
+
         <div class="tabs">
           <div class="tab active" data-tab="verify">
             <i class="fas fa-id-card"></i>
@@ -719,6 +756,48 @@
       let allCandidates = [];
       let allPositions = [];
       let currentMatricNumber = "";
+      let currentElectionStatus = "not_started";
+
+      // Load election status on page load
+      async function loadElectionStatus() {
+        try {
+          const response = await fetch(API_BASE + "/election-status");
+          const result = await response.json();
+
+          if (result.success) {
+            currentElectionStatus = result.election_status;
+            updateElectionStatusBanner();
+          }
+        } catch (error) {
+          console.error("Failed to load election status:", error);
+        }
+      }
+
+      // Update election status banner
+      function updateElectionStatusBanner() {
+        const banner = document.getElementById("election-status-banner");
+        const statusText = document.getElementById("election-status-text");
+
+        banner.className = "election-status " + currentElectionStatus;
+
+        switch (currentElectionStatus) {
+          case "ongoing":
+            statusText.innerHTML =
+              "<strong>Voting is currently ongoing.</strong> You can verify your matric number and cast your vote.";
+            break;
+          case "paused":
+            statusText.innerHTML =
+              "<strong>Voting has been temporarily paused.</strong> Please check back later.";
+            break;
+          case "ended":
+            statusText.innerHTML =
+              "<strong>Voting has ended.</strong> Thank you for participating.";
+            break;
+          default:
+            statusText.innerHTML =
+              "<strong>Voting has not started yet.</strong> Please wait for the election to begin.";
+        }
+      }
 
       // Tab navigation
       document.querySelectorAll(".tab").forEach((item) => {
@@ -825,6 +904,34 @@
         .getElementById("matric-verification-form")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
+
+          // Check election status first
+          if (currentElectionStatus !== "ongoing") {
+            const alert = document.getElementById("verify-alert");
+            alert.className = "alert alert-error";
+            let message = "";
+
+            switch (currentElectionStatus) {
+              case "not_started":
+                message =
+                  "Voting has not started yet. Please wait for the election to begin.";
+                break;
+              case "paused":
+                message =
+                  "Voting has been temporarily paused. Please try again later.";
+                break;
+              case "ended":
+                message = "Voting has ended. You can no longer cast your vote.";
+                break;
+              default:
+                message =
+                  "Voting is currently unavailable. Please try again later.";
+            }
+
+            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            alert.style.display = "flex";
+            return;
+          }
 
           const matricNumber = document
             .getElementById("matric-number")
@@ -1070,6 +1177,34 @@
         .addEventListener("submit", async (e) => {
           e.preventDefault();
 
+          // Check election status first
+          if (currentElectionStatus !== "ongoing") {
+            const alert = document.getElementById("vote-alert");
+            alert.className = "alert alert-error";
+            let message = "";
+
+            switch (currentElectionStatus) {
+              case "not_started":
+                message =
+                  "Voting has not started yet. Please wait for the election to begin.";
+                break;
+              case "paused":
+                message =
+                  "Voting has been temporarily paused. Please try again later.";
+                break;
+              case "ended":
+                message = "Voting has ended. You can no longer cast your vote.";
+                break;
+              default:
+                message =
+                  "Voting is currently unavailable. Please try again later.";
+            }
+
+            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            alert.style.display = "flex";
+            return;
+          }
+
           const missingPositions = allPositions.filter(
             (position) => !selectedCandidates[position]
           );
@@ -1129,6 +1264,9 @@
 
       // Initialize the page
       document.addEventListener("DOMContentLoaded", () => {
+        // Load election status
+        loadElectionStatus();
+
         // Reset forms when returning to verification tab
         document
           .querySelector('.tab[data-tab="verify"]')

@@ -18,6 +18,7 @@ db = client[DATABASE_NAME]
 voters_collection = db['voters']
 candidates_collection = db['candidates']
 votes_collection = db['votes']
+election_settings_collection = db['election_settings']
 
 # Valid matric numbers database (100 mock matric numbers)
 VALID_MATRIC_NUMBERS = {
@@ -93,97 +94,130 @@ def init_db():
         except Exception as e:
             print(f"⚠️  Index warning for {field}: {e}")
 
-    # Add comprehensive sample candidates if none exist
+    # Initialize election settings if not exists
+    if election_settings_collection.count_documents({}) == 0:
+        election_settings_collection.insert_one({
+            'election_status': 'not_started',
+            'start_time': None,
+            'end_time': None,
+            'updated_at': datetime.utcnow()
+        })
+        print("✅ Election settings initialized")
+
+    # Add REAL candidates if none exist
     if candidates_collection.count_documents({}) == 0:
-        sample_candidates = [
-            # SRC President (3 candidates)
+        real_candidates = [
+            # President (3 candidates)
             {
-                "name": "John Chukwuma",
-                "position": "SRC President",
+                "name": "Olukunle Tomiwa Covenant",
+                "position": "President",
                 "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
-                "name": "Maria Okon",
-                "position": "SRC President", 
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "David Bassey",
-                "position": "SRC President",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            
-            # SRC Vice President (3 candidates)
-            {
-                "name": "Grace Emmanuel",
-                "position": "SRC Vice President",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Samuel Johnson",
-                "position": "SRC Vice President",
+                "name": "Kennedy Solomon", 
+                "position": "President",
                 "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
-                "name": "Fatima Bello",
-                "position": "SRC Vice President",
-                "faculty": "Social Science",
+                "name": "Jeremiah Gideon Emmanuel",
+                "position": "President",
+                "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             
-            # SRC Secretary (3 candidates)
+            # Vice President (2 candidates)
             {
-                "name": "Chinwe Okafor",
-                "position": "SRC Secretary",
+                "name": "Onwuoha Confidence Daberechi",
+                "position": "Vice President",
+                "faculty": "Natural and Applied Science",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Babade Beatrice Jonathan",
+                "position": "Vice President",
                 "faculty": "Arts and Communications",
                 "created_at": datetime.utcnow()
             },
+            
+            # Financial Secretary (1 candidate)
             {
-                "name": "Michael Adebayo",
-                "position": "SRC Secretary",
+                "name": "Dimkpa Raymond Baribeebi",
+                "position": "Financial Secretary",
                 "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
+            
+            # Director of Transport (1 candidate)
             {
-                "name": "Jennifer Musa",
-                "position": "SRC Secretary",
+                "name": "Mbang Donnoble Godwin",
+                "position": "Director of Transport",
+                "faculty": "Natural and Applied Science",
+                "created_at": datetime.utcnow()
+            },
+            
+            # Director of Socials (2 candidates)
+            {
+                "name": "Olukunle Titilola Oyindamola",
+                "position": "Director of Socials",
+                "faculty": "Management Science",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "name": "Alasy Clinton Ebubechukwu",
+                "position": "Director of Socials",
                 "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             
-            # Senate Members - Natural and Applied Science (4 candidates for 2 positions)
+            # Director of Sports (3 candidates)
             {
-                "name": "Emeka Nwosu",
-                "position": "Senate Member - Natural and Applied Science",
+                "name": "Collins Jacob",
+                "position": "Director of Sports",
                 "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
             {
-                "name": "Bisi Adekunle",
-                "position": "Senate Member - Natural and Applied Science",
-                "faculty": "Natural and Applied Science",
+                "name": "Chisom Ejims",
+                "position": "Director of Sports",
+                "faculty": "Management Science",
                 "created_at": datetime.utcnow()
             },
             {
-                "name": "Tunde Ogunleye",
-                "position": "Senate Member - Natural and Applied Science",
+                "name": "Davidson Lawrence",
+                "position": "Director of Sports",
                 "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
+            
+            # Director of Information (1 candidate)
             {
-                "name": "Ngozi Eze",
-                "position": "Senate Member - Natural and Applied Science",
+                "name": "Meshach Efioke",
+                "position": "Director of Information",
                 "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
+            
+            # Student Chaplain (1 candidate)
+            {
+                "name": "Abraham Raymond",
+                "position": "Student Chaplain",
+                "faculty": "Natural and Applied Science",
+                "created_at": datetime.utcnow()
+            }
         ]
-        candidates_collection.insert_many(sample_candidates)
-        print("✅ Sample candidates added to MongoDB")
+        candidates_collection.insert_many(real_candidates)
+        print("✅ REAL candidates added to MongoDB")
+        print("📋 Candidate Positions Summary:")
+        print("   - President: 3 candidates")
+        print("   - Vice President: 2 candidates") 
+        print("   - Financial Secretary: 1 candidate")
+        print("   - Director of Transport: 1 candidate")
+        print("   - Director of Socials: 2 candidates")
+        print("   - Director of Sports: 3 candidates")
+        print("   - Director of Information: 1 candidate")
+        print("   - Student Chaplain: 1 candidate")
     else:
         print("✅ Candidates already exist in database")
 
@@ -205,6 +239,17 @@ def is_valid_matric(matric_number):
     """Check if matric number is in our valid list"""
     return matric_number.upper() in VALID_MATRIC_NUMBERS
 
+def get_election_status():
+    """Get current election status from database"""
+    try:
+        election_settings = election_settings_collection.find_one({})
+        if election_settings:
+            return election_settings.get('election_status', 'not_started')
+        return 'not_started'
+    except Exception as e:
+        print(f"❌ Error getting election status: {e}")
+        return 'not_started'
+
 # Initialize database
 init_db()
 
@@ -213,14 +258,48 @@ def student_home():
     """Student portal home page"""
     return render_template('student_portal.html')
 
+@app.route('/api/election-status', methods=['GET'])
+def get_election_status_api():
+    """Get current election status"""
+    try:
+        election_status = get_election_status()
+        return jsonify({
+            'success': True,
+            'election_status': election_status
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting election status: {str(e)}'
+        }), 500
+
 @app.route('/api/verify-matric', methods=['POST'])
 def verify_matric():
     """Verify matric number and return student status"""
     try:
+        # Check election status first
+        election_status = get_election_status()
+        
+        if election_status == 'not_started':
+            return jsonify({
+                'success': False,
+                'message': 'Voting has not started yet. Please wait for the election to begin.'
+            }), 400
+        elif election_status == 'paused':
+            return jsonify({
+                'success': False,
+                'message': 'Voting has been temporarily paused. Please try again later.'
+            }), 400
+        elif election_status == 'ended':
+            return jsonify({
+                'success': False,
+                'message': 'Voting has ended. You can no longer cast your vote.'
+            }), 400
+        
         data = request.get_json()
         matric_number = data.get('matric_number')
         
-        print(f"🔍 DEBUG: Matric verification attempt - Matric: {matric_number}")
+        print(f"🔍 DEBUG: Matric verification attempt - Matric: {matric_number}, Election Status: {election_status}")
         
         if not matric_number:
             return jsonify({
@@ -316,6 +395,9 @@ def verify_matric():
 def get_candidates():
     """Get list of all candidates"""
     try:
+        # Check election status
+        election_status = get_election_status()
+        
         candidates = list(candidates_collection.find({}, {'_id': 1, 'name': 1, 'position': 1, 'faculty': 1}))
         
         candidates_list = []
@@ -329,7 +411,8 @@ def get_candidates():
         
         return jsonify({
             'success': True,
-            'candidates': candidates_list
+            'candidates': candidates_list,
+            'election_status': election_status
         })
         
     except Exception as e:
@@ -342,11 +425,30 @@ def get_candidates():
 def cast_vote():
     """Cast votes for multiple candidates at once"""
     try:
+        # Check election status first
+        election_status = get_election_status()
+        
+        if election_status == 'not_started':
+            return jsonify({
+                'success': False,
+                'message': 'Voting has not started yet. Please wait for the election to begin.'
+            }), 400
+        elif election_status == 'paused':
+            return jsonify({
+                'success': False,
+                'message': 'Voting has been temporarily paused. Please try again later.'
+            }), 400
+        elif election_status == 'ended':
+            return jsonify({
+                'success': False,
+                'message': 'Voting has ended. You can no longer cast your vote.'
+            }), 400
+        
         data = request.get_json()
         matric_number = data.get('matric_number')
         votes = data.get('votes')  # Dictionary of {position: {id, name}}
         
-        print(f"🔍 DEBUG: Vote attempt received - Matric: {matric_number}, Votes: {len(votes)} positions")
+        print(f"🔍 DEBUG: Vote attempt received - Matric: {matric_number}, Votes: {len(votes)} positions, Election Status: {election_status}")
         
         if not all([matric_number, votes]) or len(votes) == 0:
             print("❌ DEBUG: Missing required fields or no votes")
@@ -565,9 +667,16 @@ if __name__ == '__main__':
     print("   - Matric number validation (100 pre-approved numbers)")
     print("   - One vote per student")
     print("   - One vote per position per student")
-    print("🗳️  Election Positions Available:")
-    print("   - SRC President, Vice President, Secretary")
-    print("   - Senate Members for each faculty")
+    print("   - Election status control (not started, ongoing, paused, ended)")
+    print("🗳️  REAL ELECTION CANDIDATES:")
+    print("   - President: 3 candidates")
+    print("   - Vice President: 2 candidates")
+    print("   - Financial Secretary: 1 candidate")
+    print("   - Director of Transport: 1 candidate")
+    print("   - Director of Socials: 2 candidates")
+    print("   - Director of Sports: 3 candidates")
+    print("   - Director of Information: 1 candidate")
+    print("   - Student Chaplain: 1 candidate")
     print("⚠️  VOTING REQUIREMENT: Students must select one candidate for EVERY position")
     print(f"🌐 Student Portal running at: http://0.0.0.0:{port}")
     print("🎓 Students can verify matric number and vote at this portal")
