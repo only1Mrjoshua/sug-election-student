@@ -292,11 +292,6 @@
         box-shadow: none;
       }
 
-      .btn:disabled:hover {
-        transform: none;
-        box-shadow: none;
-      }
-
       .alert {
         padding: 18px 25px;
         border-radius: var(--radius);
@@ -317,25 +312,6 @@
         background: var(--light-red);
         color: var(--primary-red);
         border-left-color: var(--primary-red);
-      }
-
-      .alert-warning {
-        background: var(--light-yellow);
-        color: #b38f00;
-        border-left-color: var(--primary-yellow);
-      }
-
-      .info-box {
-        background: var(--light-yellow);
-        border: 2px solid var(--primary-yellow);
-        border-radius: var(--radius);
-        padding: 20px;
-        margin: 25px 0;
-        color: var(--dark-gray);
-      }
-
-      .info-box strong {
-        color: var(--primary-green);
       }
 
       .position-section {
@@ -406,12 +382,6 @@
         font-size: 1.2rem;
         margin-bottom: 5px;
         color: var(--primary-green);
-      }
-
-      .candidate-position {
-        font-weight: 600;
-        margin-bottom: 5px;
-        color: var(--dark-gray);
       }
 
       .candidate-faculty {
@@ -498,16 +468,6 @@
         color: var(--primary-red);
       }
 
-      /* Registration Form Styles */
-      .registration-form {
-        display: none;
-      }
-
-      .verification-form {
-        display: block;
-      }
-
-      /* Access Denied Styles */
       .access-denied {
         text-align: center;
         padding: 60px 20px;
@@ -533,52 +493,31 @@
         font-size: 1.1rem;
       }
 
-      /* Responsive Design */
       @media (max-width: 768px) {
         .container {
           padding: 10px;
         }
-
         .header {
           flex-direction: column;
           text-align: center;
           gap: 20px;
         }
-
         .tabs {
           flex-direction: column;
         }
-
         .tab {
           margin-bottom: 5px;
         }
-
         .main-content {
           padding: 20px;
         }
-
         .candidates-grid {
           grid-template-columns: 1fr;
         }
-
         .position-title {
           flex-direction: column;
           align-items: flex-start;
           gap: 10px;
-        }
-      }
-
-      @media (max-width: 480px) {
-        .header {
-          padding: 20px;
-        }
-
-        .university-info h1 {
-          font-size: 1.8rem;
-        }
-
-        .page-title {
-          font-size: 1.5rem;
         }
       }
     </style>
@@ -627,7 +566,6 @@
           <div id="verify-alert" class="alert"></div>
 
           <div class="form-container">
-            <!-- Verification Form -->
             <div id="verification-form" class="verification-form">
               <form id="matric-verification-form">
                 <div class="form-group">
@@ -663,7 +601,7 @@
 
         <!-- Voting Tab -->
         <div id="vote-tab" class="tab-content">
-          <!-- Access Denied View (shown when not verified) -->
+          <!-- Access Denied View -->
           <div id="access-denied-view" class="access-denied">
             <div class="access-denied-icon">
               <i class="fas fa-exclamation-triangle"></i>
@@ -679,7 +617,7 @@
             </button>
           </div>
 
-          <!-- Voting View (shown when verified) -->
+          <!-- Voting View -->
           <div id="voting-view" style="display: none">
             <div class="page-header">
               <h2 class="page-title">Cast Your Vote</h2>
@@ -750,7 +688,7 @@
     </div>
 
     <script>
-      const API_BASE = "/api";
+      const API_BASE = "https://your-student-backend-url.onrender.com/api";
       let selectedCandidates = {};
       let isStudentVerified = false;
       let allCandidates = [];
@@ -802,14 +740,11 @@
       // Tab navigation
       document.querySelectorAll(".tab").forEach((item) => {
         item.addEventListener("click", function () {
-          // If trying to access vote tab without verification
           if (this.getAttribute("data-tab") === "vote" && !isStudentVerified) {
             const alert = document.getElementById("verify-alert");
             alert.className = "alert alert-error";
             alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> You must verify your matric number first before accessing the voting page.`;
             alert.style.display = "flex";
-
-            // Ensure we stay on the verify tab
             showTab("verify");
             return;
           }
@@ -834,7 +769,6 @@
       });
 
       function showTab(tabName) {
-        // If trying to access vote tab without verification
         if (tabName === "vote" && !isStudentVerified) {
           const alert = document.getElementById("verify-alert");
           alert.className = "alert alert-error";
@@ -865,8 +799,6 @@
         const voteTab = document.getElementById("vote-tab-button");
         voteTab.classList.remove("disabled");
         isStudentVerified = true;
-
-        // Show voting view and hide access denied view
         document.getElementById("access-denied-view").style.display = "none";
         document.getElementById("voting-view").style.display = "block";
       }
@@ -905,7 +837,6 @@
         .addEventListener("submit", async (e) => {
           e.preventDefault();
 
-          // Check election status first
           if (currentElectionStatus !== "ongoing") {
             const alert = document.getElementById("verify-alert");
             alert.className = "alert alert-error";
@@ -939,7 +870,6 @@
           const verifyBtn = document.getElementById("verify-btn");
           const originalText = verifyBtn.innerHTML;
 
-          // Validate matric format
           if (
             !matricNumber.toUpperCase().startsWith("U") ||
             (matricNumber.length !== 8 &&
@@ -960,9 +890,7 @@
 
             const response = await fetch(API_BASE + "/verify-matric", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ matric_number: matricNumber }),
             });
 
@@ -971,25 +899,19 @@
 
             if (result.success) {
               if (result.verified && result.can_vote) {
-                // Student is verified and can vote
                 alert.className = "alert alert-success";
                 alert.innerHTML = `<i class="fas fa-check-circle"></i> ${result.message}`;
                 alert.style.display = "flex";
-
                 currentMatricNumber = matricNumber;
                 enableVotingTab();
-
-                // Switch to voting tab
                 setTimeout(() => {
                   showTab("vote");
                 }, 1500);
               } else if (result.verified && !result.can_vote) {
-                // Student already voted
                 alert.className = "alert alert-error";
                 alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
                 alert.style.display = "flex";
               } else {
-                // Invalid matric number
                 alert.className = "alert alert-error";
                 alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
                 alert.style.display = "flex";
@@ -1035,11 +957,11 @@
 
         try {
           container.innerHTML = `
-            <div class="loading">
-              <div class="loading-spinner"></div>
-              <p>Loading candidates...</p>
-            </div>
-          `;
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading candidates...</p>
+                    </div>
+                `;
 
           const response = await fetch(API_BASE + "/candidates");
           const result = await response.json();
@@ -1070,13 +992,15 @@
                 const isSelected = !!selectedCandidates[position];
 
                 positionHeader.innerHTML = `
-                  <span>${position}</span>
-                  <span class="position-status ${
-                    isSelected ? "status-completed" : "status-required"
-                  }">
-                    ${isSelected ? "Selected" : "Required"}
-                  </span>
-                `;
+                                <span>${position}</span>
+                                <span class="position-status ${
+                                  isSelected
+                                    ? "status-completed"
+                                    : "status-required"
+                                }">
+                                    ${isSelected ? "Selected" : "Required"}
+                                </span>
+                            `;
                 positionSection.appendChild(positionHeader);
 
                 const candidatesGrid = document.createElement("div");
@@ -1094,13 +1018,15 @@
                   candidateCard.dataset.candidateId = candidate.id;
                   candidateCard.dataset.position = candidate.position;
                   candidateCard.innerHTML = `
-                    <div class="candidate-name">${candidate.name}</div>
-                    ${
-                      candidate.faculty
-                        ? `<div class="candidate-faculty">${candidate.faculty}</div>`
-                        : ""
-                    }
-                  `;
+                                    <div class="candidate-name">${
+                                      candidate.name
+                                    }</div>
+                                    ${
+                                      candidate.faculty
+                                        ? `<div class="candidate-faculty">${candidate.faculty}</div>`
+                                        : ""
+                                    }
+                                `;
 
                   candidateCard.addEventListener("click", function () {
                     const position = this.dataset.position;
@@ -1117,7 +1043,6 @@
                       });
 
                     this.classList.add("selected");
-
                     selectedCandidates[position] = {
                       id: candidateId,
                       name: candidateName,
@@ -1146,28 +1071,28 @@
               updateVoteButtonState();
             } else {
               container.innerHTML = `
-                <div class="loading">
-                  <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
-                  <h3>No Candidates Available</h3>
-                  <p>Candidates will appear here once they are registered.</p>
-                </div>
-              `;
+                            <div class="loading">
+                                <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
+                                <h3>No Candidates Available</h3>
+                                <p>Candidates will appear here once they are registered.</p>
+                            </div>
+                        `;
             }
           } else {
             throw new Error(result.message || "Failed to load candidates");
           }
         } catch (error) {
           container.innerHTML = `
-            <div class="loading">
-              <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px; color: var(--primary-red);"></i>
-              <h3>Unable to Load Candidates</h3>
-              <p>There was a problem fetching the candidate list. Please try again.</p>
-              <button class="btn" style="margin-top: 20px;" onclick="loadCandidates()">
-                <i class="fas fa-redo"></i>
-                Try Again
-              </button>
-            </div>
-          `;
+                    <div class="loading">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px; color: var(--primary-red);"></i>
+                        <h3>Unable to Load Candidates</h3>
+                        <p>There was a problem fetching the candidate list. Please try again.</p>
+                        <button class="btn" style="margin-top: 20px;" onclick="loadCandidates()">
+                            <i class="fas fa-redo"></i>
+                            Try Again
+                        </button>
+                    </div>
+                `;
         }
       }
 
@@ -1177,7 +1102,6 @@
         .addEventListener("submit", async (e) => {
           e.preventDefault();
 
-          // Check election status first
           if (currentElectionStatus !== "ongoing") {
             const alert = document.getElementById("vote-alert");
             alert.className = "alert alert-error";
@@ -1226,9 +1150,7 @@
 
             const response = await fetch(API_BASE + "/vote", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 matric_number: currentMatricNumber,
                 votes: selectedCandidates,
@@ -1246,7 +1168,6 @@
               alert.className = "alert alert-error";
               alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
               alert.style.display = "flex";
-
               voteBtn.innerHTML = originalText;
               voteBtn.disabled = false;
             }
@@ -1256,7 +1177,6 @@
             alert.innerHTML =
               '<i class="fas fa-exclamation-circle"></i> Voting failed. Please check your connection and try again.';
             alert.style.display = "flex";
-
             voteBtn.innerHTML = originalText;
             voteBtn.disabled = false;
           }
@@ -1264,10 +1184,7 @@
 
       // Initialize the page
       document.addEventListener("DOMContentLoaded", () => {
-        // Load election status
         loadElectionStatus();
-
-        // Reset forms when returning to verification tab
         document
           .querySelector('.tab[data-tab="verify"]')
           .addEventListener("click", () => {
