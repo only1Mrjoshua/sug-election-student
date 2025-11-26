@@ -427,7 +427,7 @@ def check_duplicate_name(name):
     return voters_collection.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}) is not None
 
 def validate_matric_number(matric_number):
-    """Validate matric number format - must start with U and be 8 or 10 characters total"""
+    """Validate matric number format - must start with U and be 8, 9 or 10 characters total"""
     matric_upper = matric_number.upper()
     
     # Check if starts with U
@@ -435,7 +435,7 @@ def validate_matric_number(matric_number):
         return False
     
     # Check total length (including the 'U')
-    if len(matric_upper) not in [8, 10]:
+    if len(matric_upper) not in [8, 9, 10]:
         return False
     
     return True
@@ -1182,10 +1182,10 @@ def student_home():
                                 <i class="fas fa-id-card"></i>
                                 Matric Number
                             </label>
-                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U1234567 or U123456789" title="Must start with U and be 8 or 10 characters total">
+                            <input type="text" id="matric-number" name="matric_number" required placeholder="e.g., U1234567, U12345678, or U123456789" title="Must start with U and be 8, 9 or 10 characters total">
                             <div class="validation-message" id="matric-validation">
                                 <i class="fas fa-info-circle"></i>
-                                <span>Format: Must start with U and be exactly 8 or 10 characters total</span>
+                                <span>Format: Must start with U and be exactly 8, 9 or 10 characters total</span>
                             </div>
                         </div>
                         
@@ -1417,15 +1417,15 @@ def student_home():
             const matric = this.value.trim();
             const validation = document.getElementById('matric-validation');
             
-            if (matric && (!matric.toUpperCase().startsWith('U') || (matric.length !== 8 && matric.length !== 10))) {
+            if (matric && (!matric.toUpperCase().startsWith('U') || (matric.length !== 8 && matric.length !== 9 && matric.length !== 10))) {
                 validation.className = 'validation-message validation-invalid';
-                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Must start with U and be exactly 8 or 10 characters total';
+                validation.innerHTML = '<i class="fas fa-times-circle"></i> Invalid format. Must start with U and be exactly 8, 9 or 10 characters total';
             } else if (matric) {
                 validation.className = 'validation-message validation-valid';
                 validation.innerHTML = '<i class="fas fa-check-circle"></i> Valid matric number format';
             } else {
                 validation.className = 'validation-message';
-                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: Must start with U and be exactly 8 or 10 characters total';
+                validation.innerHTML = '<i class="fas fa-info-circle"></i> Format: Must start with U and be exactly 8, 9 or 10 characters total';
             }
         });
         
@@ -1447,10 +1447,10 @@ def student_home():
             }
             
             // Validate matric number format
-            if (!data.matric_number.toUpperCase().startsWith('U') || (data.matric_number.length !== 8 && data.matric_number.length !== 10)) {
+            if (!data.matric_number.toUpperCase().startsWith('U') || (data.matric_number.length !== 8 && data.matric_number.length !== 9 && data.matric_number.length !== 10)) {
                 const alert = document.getElementById('register-alert');
                 alert.className = 'alert alert-error';
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Must start with U and be exactly 8 or 10 characters total.`;
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Must start with U and be exactly 8, 9 or 10 characters total.`;
                 alert.style.display = 'flex';
                 return;
             }
@@ -1914,7 +1914,7 @@ def register_voter():
         if not validate_matric_number(matric_number):
             return jsonify({
                 'success': False,
-                'message': 'Invalid matric number format. Must start with U and be exactly 8 or 10 characters total'
+                'message': 'Invalid matric number format. Must start with U and be exactly 8, 9 or 10 characters total'
             }), 400
         
         # Check for duplicate matric number
