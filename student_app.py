@@ -1,11 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from datetime import datetime
-import hashlib
 import os
-import re
 from bson.objectid import ObjectId
-import requests
 
 app = Flask(__name__)
 
@@ -22,31 +19,64 @@ voters_collection = db['voters']
 candidates_collection = db['candidates']
 votes_collection = db['votes']
 
+# Valid matric numbers database (100 mock matric numbers)
+VALID_MATRIC_NUMBERS = {
+    # Natural and Applied Science (25 students)
+    "U20241001", "U20241002", "U20241003", "U20241004", "U20241005",
+    "U20241006", "U20241007", "U20241008", "U20241009", "U20241010",
+    "U20241011", "U20241012", "U20241013", "U20241014", "U20241015",
+    "U20241016", "U20241017", "U20241018", "U20241019", "U20241020",
+    "U20241021", "U20241022", "U20241023", "U20241024", "U20241025",
+    
+    # Arts and Communications (25 students)
+    "U20242001", "U20242002", "U20242003", "U20242004", "U20242005",
+    "U20242006", "U20242007", "U20242008", "U20242009", "U20242010",
+    "U20242011", "U20242012", "U20242013", "U20242014", "U20242015",
+    "U20242016", "U20242017", "U20242018", "U20242019", "U20242020",
+    "U20242021", "U20242022", "U20242023", "U20242024", "U20242025",
+    
+    # Social Science (25 students)
+    "U20243001", "U20243002", "U20243003", "U20243004", "U20243005",
+    "U20243006", "U20243007", "U20243008", "U20243009", "U20243010",
+    "U20243011", "U20243012", "U20243013", "U20243014", "U20243015",
+    "U20243016", "U20243017", "U20243018", "U20243019", "U20243020",
+    "U20243021", "U20243022", "U20243023", "U20243024", "U20243025",
+    
+    # Management Science (25 students)
+    "U20244001", "U20244002", "U20244003", "U20244004", "U20244005",
+    "U20244006", "U20244007", "U20244008", "U20244009", "U20244010",
+    "U20244011", "U20244012", "U20244013", "U20244014", "U20244015",
+    "U20244016", "U20244017", "U20244018", "U20244019", "U20244020",
+    "U20244021", "U20244022", "U20244023", "U20244024", "U20244025"
+}
+
 def init_db():
     """Initialize database with sample data if needed"""
-    # First, clean up any existing problematic indexes
+    # Clean up any existing problematic indexes
     try:
-        # Get all current indexes on votes collection
-        current_indexes = list(votes_collection.list_indexes())
-        for index in current_indexes:
+        # Clean up voters collection indexes
+        current_voter_indexes = list(voters_collection.list_indexes())
+        for index in current_voter_indexes:
             index_name = index['name']
-            # Remove problematic unique index on voter_id alone if it exists
+            # Remove any email indexes
+            if index_name == 'email_1':
+                voters_collection.drop_index('email_1')
+                print("✅ Removed email index from voters collection")
+        
+        # Clean up votes collection indexes  
+        current_vote_indexes = list(votes_collection.list_indexes())
+        for index in current_vote_indexes:
+            index_name = index['name']
             if index_name == 'voter_id_1' and index.get('unique', False):
                 votes_collection.drop_index('voter_id_1')
                 print("✅ Removed problematic unique index on voter_id")
     except Exception as e:
         print(f"ℹ️  Index cleanup: {e}")
 
-    # Create correct indexes
+    # Create correct indexes - MATRIC NUMBER ONLY
     indexes_to_create = [
-        (voters_collection, "matric_number", True),
-        (voters_collection, "email", True),
-        (voters_collection, "ip_hash", False),
-        (voters_collection, "name", False),
-        (candidates_collection, "name", False),
-        (candidates_collection, "position", False),
+        (voters_collection, "matric_number", True),  # Only unique index we need
         (votes_collection, "candidate_id", False),
-        # Compound unique index - allows multiple votes per voter but only one per position
         (votes_collection, [("voter_id", 1), ("candidate_position", 1)], True),
     ]
     
@@ -151,280 +181,11 @@ def init_db():
                 "faculty": "Natural and Applied Science",
                 "created_at": datetime.utcnow()
             },
-            
-            # Senate Members - Management Science (4 candidates for 2 positions)
-            {
-                "name": "Oluwatoyin Bankole",
-                "position": "Senate Member - Management Science",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "James Okoro",
-                "position": "Senate Member - Management Science",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Patience Udoh",
-                "position": "Senate Member - Management Science",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Sunday Moses",
-                "position": "Senate Member - Management Science",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Senate Members - Social Science (4 candidates for 2 positions)
-            {
-                "name": "Aisha Ibrahim",
-                "position": "Senate Member - Social Science",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Peter Okon",
-                "position": "Senate Member - Social Science",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Ruth Chukwu",
-                "position": "Senate Member - Social Science",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Daniel Akpan",
-                "position": "Senate Member - Social Science",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Senate Members - Arts and Communications (4 candidates for 2 positions)
-            {
-                "name": "Chioma Nwankwo",
-                "position": "Senate Member - Arts and Communications",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Kolawole Adeyemi",
-                "position": "Senate Member - Arts and Communications",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Mercy Thompson",
-                "position": "Senate Member - Arts and Communications",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Ibrahim Sani",
-                "position": "Senate Member - Arts and Communications",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Representative Members - Information (3 candidates)
-            {
-                "name": "Tech Savvy Smart",
-                "position": "Information Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Media Pro Grace",
-                "position": "Information Representative",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Info King David",
-                "position": "Information Representative",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Representative Members - Social (3 candidates)
-            {
-                "name": "Social Butterfly Amina",
-                "position": "Social Representative",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Event Master Tunde",
-                "position": "Social Representative",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Party Planner Joy",
-                "position": "Social Representative",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Representative Members - Sports (3 candidates)
-            {
-                "name": "Sport Star Mike",
-                "position": "Sports Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Team Captain Bola",
-                "position": "Sports Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Fitness Queen Sarah",
-                "position": "Sports Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Representative Members - Security (3 candidates)
-            {
-                "name": "Safety First James",
-                "position": "Security Representative",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Campus Guard Faith",
-                "position": "Security Representative",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Watchful Eye Ken",
-                "position": "Security Representative",
-                "faculty": "Social Science",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Representative Members - Transport (3 candidates)
-            {
-                "name": "Mobility Expert John",
-                "position": "Transport Representative",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Ride Master Peace",
-                "position": "Transport Representative",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Commute King Henry",
-                "position": "Transport Representative",
-                "faculty": "Management Science",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Representative Members - Hostel 1 (3 candidates)
-            {
-                "name": "Dorm Leader Tina",
-                "position": "Hostel 1 Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Room Rep Ahmed",
-                "position": "Hostel 1 Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Hostel Hero Linda",
-                "position": "Hostel 1 Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Representative Members - Hostel 2 (3 candidates)
-            {
-                "name": "Accommodation Ace Paul",
-                "position": "Hostel 2 Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Dorm Chief Blessing",
-                "position": "Hostel 2 Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Hostel Head Victor",
-                "position": "Hostel 2 Representative",
-                "faculty": "Natural and Applied Science",
-                "created_at": datetime.utcnow()
-            },
-            
-            # Representative Members - Chapel (3 candidates)
-            {
-                "name": "Spiritual Guide Peter",
-                "position": "Chapel Representative",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Faith Leader Deborah",
-                "position": "Chapel Representative",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            },
-            {
-                "name": "Morality Mentor Joseph",
-                "position": "Chapel Representative",
-                "faculty": "Arts and Communications",
-                "created_at": datetime.utcnow()
-            }
         ]
         candidates_collection.insert_many(sample_candidates)
-        print("✅ Comprehensive sample candidates added to MongoDB")
+        print("✅ Sample candidates added to MongoDB")
     else:
         print("✅ Candidates already exist in database")
-
-def get_client_ip():
-    """Get client IP address"""
-    if request.environ.get('HTTP_X_FORWARDED_FOR'):
-        ip = request.environ['HTTP_X_FORWARDED_FOR'].split(',')[0]
-    else:
-        ip = request.environ.get('REMOTE_ADDR', '127.0.0.1')
-    return ip
-
-def hash_ip(ip_address):
-    """Hash IP address for privacy"""
-    return hashlib.sha256(ip_address.encode()).hexdigest()
-
-def check_duplicate_ip(ip_hash):
-    """Check if IP has already been used for registration"""
-    return voters_collection.find_one({"ip_hash": ip_hash}) is not None
-
-def verify_email_domain(email):
-    """Verify that email is valid"""
-    # Basic email format validation
-    import re
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email.lower()) is not None
-
-def check_duplicate_email(email):
-    """Check if email already exists in database"""
-    return voters_collection.find_one({"email": email.lower()}) is not None
-
-def check_duplicate_name(name):
-    """Check if name already exists in database (case insensitive)"""
-    return voters_collection.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}}) is not None
 
 def validate_matric_number(matric_number):
     """Validate matric number format - must start with U and be 8, 9 or 10 characters total"""
@@ -440,173 +201,31 @@ def validate_matric_number(matric_number):
     
     return True
 
-def check_duplicate_matric(matric_number):
-    """Check if matric number already exists"""
-    return voters_collection.find_one({"matric_number": matric_number.upper()}) is not None
-
-def get_ip_location(ip_address):
-    """Get location information for an IP address using multiple services"""
-    # Skip localhost IPs
-    if ip_address in ['127.0.0.1', 'localhost']:
-        return {
-            'city': 'Localhost',
-            'region': 'Development',
-            'country': 'Test Environment',
-            'latitude': None,
-            'longitude': None,
-            'isp': 'Local Network',
-            'service': 'localhost'
-        }
-    
-    services = [
-        {
-            'name': 'ipapi.co',
-            'url': f'http://ipapi.co/{ip_address}/json/',
-            'mapper': lambda data: {
-                'city': data.get('city', 'Unknown'),
-                'region': data.get('region', 'Unknown'),
-                'country': data.get('country_name', 'Unknown'),
-                'latitude': data.get('latitude'),
-                'longitude': data.get('longitude'),
-                'isp': data.get('org', 'Unknown'),
-                'service': 'ipapi.co'
-            }
-        },
-        {
-            'name': 'ip-api.com',
-            'url': f'http://ip-api.com/json/{ip_address}',
-            'mapper': lambda data: {
-                'city': data.get('city', 'Unknown'),
-                'region': data.get('regionName', 'Unknown'),
-                'country': data.get('country', 'Unknown'),
-                'latitude': data.get('lat'),
-                'longitude': data.get('lon'),
-                'isp': data.get('isp', 'Unknown'),
-                'service': 'ip-api.com'
-            }
-        },
-        {
-            'name': 'ipinfo.io',
-            'url': f'https://ipinfo.io/{ip_address}/json',
-            'mapper': lambda data: {
-                'city': data.get('city', 'Unknown'),
-                'region': data.get('region', 'Unknown'),
-                'country': data.get('country', 'Unknown'),
-                'latitude': data.get('loc', '').split(',')[0] if data.get('loc') else None,
-                'longitude': data.get('loc', '').split(',')[1] if data.get('loc') else None,
-                'isp': data.get('org', 'Unknown'),
-                'service': 'ipinfo.io'
-            }
-        }
-    ]
-    
-    for service in services:
-        try:
-            print(f"🔍 Trying IP location service: {service['name']}")
-            response = requests.get(service['url'], timeout=5)
-            if response.status_code == 200:
-                data = response.json()
-                location = service['mapper'](data)
-                print(f"✅ Location found via {service['name']}: {location}")
-                return location
-        except Exception as e:
-            print(f"⚠️  {service['name']} failed: {e}")
-            continue
-    
-    print("❌ All IP location services failed")
-    return {
-        'city': 'Unknown',
-        'region': 'Unknown', 
-        'country': 'Unknown',
-        'latitude': None,
-        'longitude': None,
-        'isp': 'Unknown',
-        'service': 'all_failed'
-    }
-
-def verify_location(ip_address):
-    """Verify if IP is from Obong University campus network"""
-    # Allow localhost for testing
-    if ip_address in ['127.0.0.1', 'localhost']:
-        print("📍 Localhost detected - allowing for testing")
-        return True
-    
-    # Get IP location
-    location = get_ip_location(ip_address)
-    
-    # Check if location matches Obong University areas
-    allowed_locations = [
-        'etim ekpo', 'obong ntak', 'akwa ibom', 'uyo', 'ikot ekpene',
-        'abak', 'ikot okoro', 'essien udim', 'ibiono', 'itu'
-    ]
-    
-    location_str = f"{location['city']} {location['region']} {location['country']}".lower()
-    
-    print(f"📍 Location check: '{location_str}'")
-    print(f"📍 Raw location data: {location}")
-    
-    # Check if any allowed location is in the location string
-    for allowed_loc in allowed_locations:
-        if allowed_loc in location_str:
-            print(f"✅ Location verified: {location_str} matches {allowed_loc}")
-            return True
-    
-    # Additional check: If we're in Nigeria but can't pinpoint exact location, allow it
-    if 'nigeria' in location_str.lower():
-        print(f"📍 Nigeria detected but not specific location: {location_str}")
-        print("⚠️  Allowing Nigerian IP for now - may need manual verification")
-        return True
-    
-    print(f"❌ Location NOT verified: {location_str}")
-    print(f"🔍 Allowed locations: {allowed_locations}")
-    return False
+def is_valid_matric(matric_number):
+    """Check if matric number is in our valid list"""
+    return matric_number.upper() in VALID_MATRIC_NUMBERS
 
 # Initialize database
 init_db()
 
 @app.route('/')
 def student_home():
-    """Student portal home page - now using template"""
+    """Student portal home page"""
     return render_template('student_portal.html')
 
-# All your API routes remain exactly the same...
-@app.route('/api/register', methods=['POST'])
-def register_voter():
-    """Register a new voter with enhanced verification"""
+@app.route('/api/verify-matric', methods=['POST'])
+def verify_matric():
+    """Verify matric number and return student status"""
     try:
         data = request.get_json()
-        name = data.get('name')
-        email = data.get('email')
-        faculty = data.get('faculty')
         matric_number = data.get('matric_number')
         
-        print(f"🔍 DEBUG: Registration attempt - Matric: {matric_number}, Name: {name}, Email: {email}")
+        print(f"🔍 DEBUG: Matric verification attempt - Matric: {matric_number}")
         
-        if not all([name, email, faculty, matric_number]):
+        if not matric_number:
             return jsonify({
                 'success': False,
-                'message': 'All fields are required'
-            }), 400
-        
-        # Basic email format validation
-        if not verify_email_domain(email):
-            return jsonify({
-                'success': False,
-                'message': 'Please provide a valid email address'
-            }), 400
-        
-        # Check for duplicate email
-        if check_duplicate_email(email):
-            return jsonify({
-                'success': False,
-                'message': 'This email address is already registered'
-            }), 400
-        
-        # Check for duplicate name (case insensitive)
-        if check_duplicate_name(name):
-            return jsonify({
-                'success': False,
-                'message': 'This name is already registered'
+                'message': 'Matric number is required'
             }), 400
         
         # Validate matric number format
@@ -617,98 +236,80 @@ def register_voter():
                 'message': 'Invalid matric number format. Must start with U and be exactly 8, 9 or 10 characters total'
             }), 400
         
-        # Check for duplicate matric number
-        if check_duplicate_matric(matric_number):
+        # Check if matric number is valid
+        if not is_valid_matric(matric_number):
             return jsonify({
                 'success': False,
-                'message': 'This matric number is already registered'
-            }), 400
-        
-        # Get client IP and location
-        client_ip = get_client_ip()
-        ip_hash = hash_ip(client_ip)
-        location_info = get_ip_location(client_ip)
-        
-        print(f"📍 DEBUG: Client IP: {client_ip}, Location: {location_info}")
-        
-        # Check for duplicate IP
-        if check_duplicate_ip(ip_hash):
-            return jsonify({
-                'success': False,
-                'message': 'This IP address has already been used for registration'
-            }), 400
-        
-        # Verify location
-        location_verified = verify_location(client_ip)
-        
-        if not location_verified:
-            # More helpful error message
-            if client_ip in ['127.0.0.1', 'localhost']:
-                error_msg = 'Local testing detected. Please test from a device connected to the Obong University campus network.'
-            elif location_info.get('country') == 'Unknown':
-                error_msg = f'Unable to verify your location. Please ensure you are connected to the Obong University campus network in Etim Ekpo/Obong Ntak area. Detected IP: {client_ip}'
-            else:
-                error_msg = f'Registration only allowed from Obong University campus network (Etim Ekpo, Obong Ntak areas). Detected location: {location_info["city"]}, {location_info["region"]}, {location_info["country"]}'
-            
-            return jsonify({
-                'success': False,
-                'message': error_msg,
-                'detected_ip': client_ip,
-                'detected_location': location_info
-            }), 403
-        
-        # Register voter in MongoDB
-        try:
-            voter_data = {
-                'matric_number': matric_upper,
-                'name': name,
-                'email': email.lower(),
-                'faculty': faculty,
-                'ip_address': client_ip,
-                'ip_hash': ip_hash,
-                'location_info': location_info,
-                'location_verified': location_verified,
-                'registration_date': datetime.utcnow(),
-                'has_voted': False
-            }
-            
-            result = voters_collection.insert_one(voter_data)
-            voter_id = str(result.inserted_id)
-            
-            print(f"✅ DEBUG: Voter registered successfully - Voter ID: {voter_id}")
-            print(f"📍 DEBUG: IP: {client_ip}, Location: {location_info}")
-            
-            return jsonify({
-                'success': True,
-                'message': 'Voter registered successfully! All security checks passed.',
-                'voter_id': voter_id,
-                'location_verified': location_verified,
-                'detected_location': location_info,
-                'email_verified': True,
-                'matric_verified': True
+                'verified': False,
+                'message': 'Invalid matric number. Please check your matric number and try again.'
             })
-            
-        except Exception as e:
-            print(f"❌ DEBUG: MongoDB error - {e}")
-            if "duplicate key" in str(e):
-                if "email" in str(e):
-                    return jsonify({
-                        'success': False,
-                        'message': 'Email address already registered'
-                    }), 400
-                elif "matric_number" in str(e):
-                    return jsonify({
-                        'success': False,
-                        'message': 'Matric number already registered'
-                    }), 400
+        
+        # Check if student is already registered/voted
+        voter = voters_collection.find_one({'matric_number': matric_upper})
+        
+        if voter:
+            # Student is registered, check if they can vote
+            if voter.get('has_voted', False):
+                return jsonify({
+                    'success': True,
+                    'verified': True,
+                    'can_vote': False,
+                    'message': 'This matric number has already voted. Each student can only vote once.',
+                    'has_voted': True
+                })
             else:
-                raise e
+                return jsonify({
+                    'success': True,
+                    'verified': True,
+                    'can_vote': True,
+                    'message': 'Matric number verified successfully. You can now vote.',
+                    'has_voted': False
+                })
+        else:
+            # Valid matric number but not registered yet - auto register
+            try:
+                voter_data = {
+                    'matric_number': matric_upper,
+                    'registration_date': datetime.utcnow(),
+                    'has_voted': False
+                }
+                
+                result = voters_collection.insert_one(voter_data)
+                voter_id = str(result.inserted_id)
+                
+                print(f"✅ DEBUG: Voter auto-registered - Matric: {matric_upper}")
+                
+                return jsonify({
+                    'success': True,
+                    'verified': True,
+                    'can_vote': True,
+                    'message': 'Matric number verified successfully. You can now vote.',
+                    'has_voted': False
+                })
+                
+            except Exception as e:
+                print(f"❌ DEBUG: Auto-registration error - {e}")
+                if "duplicate key" in str(e):
+                    # This should rarely happen now, but handle it gracefully
+                    existing_voter = voters_collection.find_one({'matric_number': matric_upper})
+                    if existing_voter:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Matric number already exists in system'
+                        }), 400
+                    else:
+                        return jsonify({
+                            'success': False,
+                            'message': 'Registration error. Please try again.'
+                        }), 400
+                else:
+                    raise e
             
     except Exception as e:
-        print(f"❌ DEBUG: Registration exception - {e}")
+        print(f"❌ DEBUG: Matric verification exception - {e}")
         return jsonify({
             'success': False,
-            'message': f'Registration error: {str(e)}'
+            'message': f'Verification error: {str(e)}'
         }), 500
 
 @app.route('/api/candidates', methods=['GET'])
@@ -737,34 +338,6 @@ def get_candidates():
             'message': f'Error fetching candidates: {str(e)}'
         }), 500
 
-@app.route('/api/verify-student/<matric_number>', methods=['GET'])
-def verify_student(matric_number):
-    """Verify if a student is registered and location verified"""
-    try:
-        voter = voters_collection.find_one({'matric_number': matric_number.upper()})
-        
-        if voter:
-            return jsonify({
-                'success': True,
-                'registered': True,
-                'location_verified': voter.get('location_verified', False),
-                'voter_name': voter['name'],
-                'has_voted': voter.get('has_voted', False),
-                'email': voter.get('email', ''),
-                'matric_number': voter.get('matric_number', '')
-            })
-        else:
-            return jsonify({
-                'success': True,
-                'registered': False
-            })
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error verifying student: {str(e)}'
-        }), 500
-
 @app.route('/api/vote', methods=['POST'])
 def cast_vote():
     """Cast votes for multiple candidates at once"""
@@ -782,21 +355,17 @@ def cast_vote():
                 'message': 'Missing required fields or no votes selected'
             }), 400
         
-        # Verify voter exists and location was verified
-        voter = voters_collection.find_one({
-            'matric_number': matric_number.upper(), 
-            'location_verified': True
-        })
+        # Verify voter exists and is valid
+        voter = voters_collection.find_one({'matric_number': matric_number.upper()})
         
         if not voter:
-            print(f"❌ DEBUG: Voter not found or not verified - Matric: {matric_number}")
+            print(f"❌ DEBUG: Voter not found - Matric: {matric_number}")
             return jsonify({
                 'success': False,
-                'message': 'Voter not found or location not verified. Please register first.'
+                'message': 'Voter not found. Please verify your matric number first.'
             }), 404
         
         voter_id = str(voter['_id'])
-        voter_name = voter['name']
         
         # Check if voter has already voted
         if voter.get('has_voted', False):
@@ -884,7 +453,7 @@ def cast_vote():
             'message': f'Voting error: {str(e)}'
         }), 500
 
-# Debug endpoints (keep all your existing debug endpoints)
+# Debug endpoints
 @app.route('/api/debug/votes')
 def debug_votes():
     """Debug endpoint to see all votes in the database"""
@@ -915,7 +484,7 @@ def debug_votes():
 
 @app.route('/api/debug/voters')
 def debug_voters():
-    """Debug endpoint to see all voters with IP and location info"""
+    """Debug endpoint to see all voters"""
     try:
         voters = list(voters_collection.find().sort('registration_date', -1))
         
@@ -924,13 +493,6 @@ def debug_voters():
             voters_list.append({
                 'id': str(voter['_id']),
                 'matric_number': voter.get('matric_number', ''),
-                'name': voter['name'],
-                'email': voter['email'],
-                'faculty': voter.get('faculty', ''),
-                'ip_address': voter.get('ip_address', ''),
-                'ip_hash': voter['ip_hash'][:10] + '...',
-                'location_info': voter.get('location_info', {}),
-                'location_verified': voter.get('location_verified', False),
                 'has_voted': voter.get('has_voted', False),
                 'registration_date': voter['registration_date'].isoformat() if 'registration_date' in voter else 'Unknown'
             })
@@ -945,86 +507,6 @@ def debug_voters():
         return jsonify({
             'success': False,
             'message': f'Error fetching voters: {str(e)}'
-        }), 500
-
-@app.route('/api/debug/candidates')
-def debug_candidates():
-    """Debug endpoint to see all candidates grouped by position"""
-    try:
-        candidates = list(candidates_collection.find().sort('position', 1))
-        
-        candidates_by_position = {}
-        for candidate in candidates:
-            position = candidate['position']
-            if position not in candidates_by_position:
-                candidates_by_position[position] = []
-            
-            candidates_by_position[position].append({
-                'id': str(candidate['_id']),
-                'name': candidate['name'],
-                'faculty': candidate.get('faculty', '')
-            })
-        
-        return jsonify({
-            'success': True,
-            'candidates_by_position': candidates_by_position
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching candidates: {str(e)}'
-        }), 500
-    
-@app.route('/api/debug/indexes')
-def debug_indexes():
-    """Debug endpoint to see all indexes"""
-    try:
-        indexes = list(votes_collection.list_indexes())
-        
-        indexes_list = []
-        for index in indexes:
-            indexes_list.append({
-                'name': index['name'],
-                'key': index['key'],
-                'unique': index.get('unique', False)
-            })
-        
-        return jsonify({
-            'success': True,
-            'indexes': indexes_list
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching indexes: {str(e)}'
-        }), 500
-
-@app.route('/api/debug/fix-indexes', methods=['POST'])
-def fix_indexes():
-    """Fix the problematic indexes"""
-    try:
-        # Remove the problematic unique index on voter_id alone
-        votes_collection.drop_index('voter_id_1')
-        print("✅ Removed problematic unique index on voter_id")
-        
-        # Ensure the compound index exists
-        votes_collection.create_index([("voter_id", 1), ("candidate_position", 1)], unique=True, name="unique_vote_per_position")
-        print("✅ Ensured compound unique index exists")
-        
-        # Recreate other necessary indexes
-        votes_collection.create_index("candidate_id")
-        print("✅ Recreated candidate_id index")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Indexes fixed successfully!'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fixing indexes: {str(e)}'
         }), 500
 
 @app.route('/api/debug/reset-votes', methods=['POST'])
@@ -1048,61 +530,47 @@ def reset_votes():
             'message': f'Error resetting votes: {str(e)}'
         }), 500
 
-@app.route('/api/debug/database')
-def debug_database():
-    """Debug endpoint to check database status"""
+@app.route('/api/debug/delete-database', methods=['POST'])
+def delete_database():
+    """DEBUG: Completely delete the database"""
     try:
-        # Get collection counts
-        voters_count = voters_collection.count_documents({})
-        candidates_count = candidates_collection.count_documents({})
-        votes_count = votes_collection.count_documents({})
-        
-        # Get database info
-        database_info = {
-            'database_name': DATABASE_NAME,
-            'mongo_uri': MONGO_URI.split('@')[-1] if '@' in MONGO_URI else MONGO_URI,  # Hide credentials
-            'collections': ['voters', 'candidates', 'votes'],
-            'record_counts': {
-                'voters': voters_count,
-                'candidates': candidates_count,
-                'votes': votes_count
-            }
-        }
-        
+        client.drop_database(DATABASE_NAME)
         return jsonify({
             'success': True,
-            'database_info': database_info
+            'message': 'Database deleted successfully. Restart the app to recreate it.'
         })
-        
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'Error checking database: {str(e)}'
+            'message': f'Error deleting database: {str(e)}'
         }), 500
+
+@app.route('/api/debug/valid-matrics')
+def debug_valid_matrics():
+    """Debug endpoint to see all valid matric numbers"""
+    return jsonify({
+        'success': True,
+        'valid_matric_numbers': list(VALID_MATRIC_NUMBERS),
+        'total_valid': len(VALID_MATRIC_NUMBERS)
+    })
 
 # Fix for Render deployment - use PORT environment variable
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    print("🚀 Starting Enhanced Student Portal - Obong University SRC Elections")
+    print("🚀 Starting Simplified Student Portal - Obong University SRC Elections")
     print("✅ MongoDB connected successfully!")
-    print("🔒 Enhanced Security Features:")
-    print("   - Matric number validation (starts with U, 8 or 10 characters)")
-    print("   - IP-based location verification (Etim Ekpo, Obong Ntak areas only)")
-    print("   - Duplicate email detection")
-    print("   - Duplicate name detection")
-    print("   - Duplicate matric number detection")
-    print("   - IP address tracking and location display")
-    print("🎓 Using Matric Number only (no Student ID)")
-    print("🏛️  Faculties: Natural and Applied Science, Arts and Communications, Social Science, Management Science")
+    print("🎓 Using Matric Number Verification Only")
+    print(f"📋 Total Valid Matric Numbers: {len(VALID_MATRIC_NUMBERS)}")
+    print("🔒 Security Features:")
+    print("   - Matric number validation (100 pre-approved numbers)")
+    print("   - One vote per student")
+    print("   - One vote per position per student")
     print("🗳️  Election Positions Available:")
-    print("   - SRC President (3 candidates)")
-    print("   - SRC Vice President (3 candidates)")
-    print("   - SRC Secretary (3 candidates)")
-    print("   - Senate Members for each faculty (4 faculties, 4 candidates each)")
-    print("   - Representative Members (Information, Social, Sports, Security, Transport, Hostel 1, Hostel 2, Chapel)")
+    print("   - SRC President, Vice President, Secretary")
+    print("   - Senate Members for each faculty")
     print("⚠️  VOTING REQUIREMENT: Students must select one candidate for EVERY position")
     print(f"🌐 Student Portal running at: http://0.0.0.0:{port}")
-    print("🎓 Students can register and vote at this portal")
+    print("🎓 Students can verify matric number and vote at this portal")
     print("🐛 Debug tools available at: /api/debug endpoints")
     print("\n⏹️  Press Ctrl+C to stop the server")
     

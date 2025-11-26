@@ -141,6 +141,16 @@
         color: var(--dark-gray);
       }
 
+      .tab.disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .tab.disabled:hover {
+        background: var(--light-gray);
+        color: var(--primary-green);
+      }
+
       .tab-content {
         display: none;
         animation: fadeIn 0.5s ease;
@@ -295,36 +305,6 @@
 
       .info-box strong {
         color: var(--primary-green);
-      }
-
-      .verification-status {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 10px;
-        font-size: 0.9rem;
-      }
-
-      .verification-badge {
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.85rem;
-      }
-
-      .badge-verified {
-        background: var(--light-green);
-        color: var(--primary-green);
-      }
-
-      .badge-pending {
-        background: var(--light-yellow);
-        color: #b38f00;
-      }
-
-      .badge-error {
-        background: var(--light-red);
-        color: var(--primary-red);
       }
 
       .position-section {
@@ -487,62 +467,39 @@
         color: var(--primary-red);
       }
 
-      .selection-summary {
-        background: var(--light-yellow);
-        border: 2px solid var(--primary-yellow);
-        border-radius: var(--radius);
-        padding: 20px;
-        margin: 20px 0;
+      /* Registration Form Styles */
+      .registration-form {
+        display: none;
       }
 
-      .summary-title {
+      .verification-form {
+        display: block;
+      }
+
+      /* Access Denied Styles */
+      .access-denied {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--medium-gray);
+      }
+
+      .access-denied-icon {
+        font-size: 4rem;
+        color: var(--primary-red);
+        margin-bottom: 20px;
+      }
+
+      .access-denied-title {
+        font-size: 1.8rem;
         font-weight: 700;
-        margin-bottom: 10px;
-        color: var(--primary-green);
-      }
-
-      .summary-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid var(--light-gray);
-      }
-
-      .summary-position {
-        font-weight: 600;
-      }
-
-      .summary-candidate {
+        margin-bottom: 15px;
         color: var(--primary-red);
       }
 
-      .missing-positions {
-        background: var(--light-red);
-        border: 2px solid var(--primary-red);
-        border-radius: var(--radius);
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .missing-title {
-        font-weight: 700;
-        margin-bottom: 10px;
-        color: var(--primary-red);
-      }
-
-      .missing-list {
-        list-style-type: none;
-      }
-
-      .missing-item {
-        padding: 8px 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .missing-item i {
-        color: var(--primary-red);
+      .access-denied-message {
+        color: var(--medium-gray);
+        margin-bottom: 30px;
+        font-size: 1.1rem;
       }
 
       /* Responsive Design */
@@ -610,214 +567,138 @@
 
       <div class="main-content">
         <div class="tabs">
-          <div class="tab active" data-tab="register">
-            <i class="fas fa-user-plus"></i>
-            Register to Vote
+          <div class="tab active" data-tab="verify">
+            <i class="fas fa-id-card"></i>
+            Verify Matric Number
           </div>
-          <div class="tab" data-tab="vote">
+          <div class="tab disabled" data-tab="vote" id="vote-tab-button">
             <i class="fas fa-vote-yea"></i>
             Cast Your Vote
           </div>
         </div>
 
-        <!-- Registration Tab -->
-        <div id="register-tab" class="tab-content active">
+        <!-- Verification Tab -->
+        <div id="verify-tab" class="tab-content active">
           <div class="page-header">
-            <h2 class="page-title">Student Registration</h2>
+            <h2 class="page-title">Verify Your Matric Number</h2>
             <p class="page-description">
-              Register to participate in the SRC elections. Only verified Obong
-              University students can register.
+              Enter your matric number to verify your eligibility to vote in the
+              SRC elections.
             </p>
           </div>
 
-          <div id="register-alert" class="alert"></div>
+          <div id="verify-alert" class="alert"></div>
 
           <div class="form-container">
-            <form id="registration-form">
-              <div class="form-group">
-                <label for="matric-number">
-                  <i class="fas fa-id-card"></i>
-                  Matric Number
-                </label>
-                <input
-                  type="text"
-                  id="matric-number"
-                  name="matric_number"
-                  required
-                  placeholder="e.g., U1234567, U12345678, or U123456789"
-                  title="Must start with U and be 8, 9 or 10 characters total"
-                />
-                <div class="validation-message" id="matric-validation">
-                  <i class="fas fa-info-circle"></i>
-                  <span
-                    >Format: Must start with U and be exactly 8, 9 or 10
-                    characters total</span
-                  >
+            <!-- Verification Form -->
+            <div id="verification-form" class="verification-form">
+              <form id="matric-verification-form">
+                <div class="form-group">
+                  <label for="matric-number">
+                    <i class="fas fa-id-card"></i>
+                    Matric Number
+                  </label>
+                  <input
+                    type="text"
+                    id="matric-number"
+                    name="matric_number"
+                    required
+                    placeholder="e.g., U1234567, U12345678, or U123456789"
+                    title="Must start with U and be 8, 9 or 10 characters total"
+                  />
+                  <div class="validation-message" id="matric-validation">
+                    <i class="fas fa-info-circle"></i>
+                    <span
+                      >Format: Must start with U and be exactly 8, 9 or 10
+                      characters total</span
+                    >
+                  </div>
                 </div>
-              </div>
 
-              <div class="form-group">
-                <label for="name">
-                  <i class="fas fa-user"></i>
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  required
-                  placeholder="Enter your full name as registered"
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="email">
-                  <i class="fas fa-envelope"></i>
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  required
-                  placeholder="Enter your email address"
-                />
-                <div class="validation-message" id="email-validation">
-                  <i class="fas fa-info-circle"></i>
-                  <span>Enter your valid email address</span>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="faculty">
-                  <i class="fas fa-university"></i>
-                  Faculty
-                </label>
-                <select id="faculty" name="faculty" required>
-                  <option value="">Select your faculty</option>
-                  <option value="Natural and Applied Science">
-                    Natural and Applied Science
-                  </option>
-                  <option value="Arts and Communications">
-                    Arts and Communications
-                  </option>
-                  <option value="Social Science">Social Science</option>
-                  <option value="Management Science">Management Science</option>
-                </select>
-              </div>
-
-              <button type="submit" class="btn" id="register-btn">
-                <i class="fas fa-user-check"></i>
-                Register to Vote
-              </button>
-            </form>
+                <button type="submit" class="btn" id="verify-btn">
+                  <i class="fas fa-search"></i>
+                  Verify Matric Number
+                </button>
+              </form>
+            </div>
           </div>
         </div>
 
         <!-- Voting Tab -->
         <div id="vote-tab" class="tab-content">
-          <div class="page-header">
-            <h2 class="page-title">Cast Your Vote</h2>
-            <p class="page-description">
-              Vote for your preferred SRC candidates.
-              <strong>You must select one candidate for every position.</strong>
-              Remember, you can only vote once!
+          <!-- Access Denied View (shown when not verified) -->
+          <div id="access-denied-view" class="access-denied">
+            <div class="access-denied-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="access-denied-title">Access Denied</h3>
+            <p class="access-denied-message">
+              You must verify your matric number first before you can access the
+              voting page.
             </p>
+            <button class="btn" onclick="showTab('verify')">
+              <i class="fas fa-arrow-left"></i>
+              Verify Matric Number
+            </button>
           </div>
 
-          <div id="vote-alert" class="alert"></div>
-
-          <div id="voting-section">
-            <div class="form-container">
-              <form id="voting-form">
-                <div class="form-group">
-                  <label for="voter-matric-number">
-                    <i class="fas fa-id-card"></i>
-                    Your Matric Number
-                  </label>
-                  <input
-                    type="text"
-                    id="voter-matric-number"
-                    name="matric_number"
-                    required
-                    placeholder="Enter your registered matric number"
-                  />
-                  <div class="verification-status">
-                    <span id="verification-text">Verification status: </span>
-                    <span
-                      id="verification-badge"
-                      class="verification-badge badge-pending"
-                      >Not Verified</span
-                    >
-                  </div>
-                </div>
-
-                <div
-                  id="selection-summary"
-                  class="selection-summary"
-                  style="display: none"
+          <!-- Voting View (shown when verified) -->
+          <div id="voting-view" style="display: none">
+            <div class="page-header">
+              <h2 class="page-title">Cast Your Vote</h2>
+              <p class="page-description">
+                Vote for your preferred SRC candidates.
+                <strong
+                  >You must select one candidate for every position.</strong
                 >
-                  <div class="summary-title">Your Selections:</div>
-                  <div id="summary-content"></div>
-                </div>
+                Remember, you can only vote once!
+              </p>
+            </div>
 
-                <div
-                  id="missing-positions"
-                  class="missing-positions"
-                  style="display: none"
-                >
-                  <div class="missing-title">
-                    <i class="fas fa-exclamation-circle"></i>
-                    Missing Selections Required
-                  </div>
-                  <ul class="missing-list" id="missing-list"></ul>
-                </div>
+            <div id="vote-alert" class="alert"></div>
 
-                <div class="form-group">
-                  <label>
-                    <i class="fas fa-users"></i>
-                    Select Your Candidates (One per Position - All Required)
-                  </label>
-                  <div id="candidates-container">
-                    <div class="loading">
-                      <div class="loading-spinner"></div>
-                      <p>Loading candidates...</p>
+            <div id="voting-section">
+              <div class="form-container">
+                <form id="voting-form">
+                  <div class="form-group">
+                    <label>
+                      <i class="fas fa-users"></i>
+                      Select Your Candidates (One per Position - All Required)
+                    </label>
+                    <div id="candidates-container">
+                      <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading candidates...</p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div class="info-box">
-                  <i class="fas fa-exclamation-triangle"></i>
-                  <strong>Important:</strong> You must select one candidate for
-                  every position. Once you submit your vote, it cannot be
-                  changed. Please review your selection carefully.
-                </div>
-
-                <button type="submit" class="btn" id="vote-btn" disabled>
-                  <i class="fas fa-paper-plane"></i>
-                  Submit Your Vote
-                </button>
-              </form>
+                  <button type="submit" class="btn" id="vote-btn">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit Your Vote
+                  </button>
+                </form>
+              </div>
             </div>
-          </div>
 
-          <div
-            id="vote-confirmation"
-            class="vote-confirmation"
-            style="display: none"
-          >
-            <div class="confirmation-icon">
-              <i class="fas fa-check-circle"></i>
+            <div
+              id="vote-confirmation"
+              class="vote-confirmation"
+              style="display: none"
+            >
+              <div class="confirmation-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <h3 class="confirmation-title">Vote Submitted Successfully!</h3>
+              <p class="confirmation-message">
+                Thank you for participating in the Obong University SRC
+                Elections 2025. Your vote has been recorded and will be counted.
+              </p>
+              <button class="btn" onclick="showTab('verify')">
+                <i class="fas fa-home"></i>
+                Return to Home
+              </button>
             </div>
-            <h3 class="confirmation-title">Vote Submitted Successfully!</h3>
-            <p class="confirmation-message">
-              Thank you for participating in the Obong University SRC Elections
-              2025. Your vote has been recorded and will be counted.
-            </p>
-            <button class="btn" onclick="showTab('register')">
-              <i class="fas fa-home"></i>
-              Return to Home
-            </button>
           </div>
         </div>
       </div>
@@ -833,41 +714,56 @@
 
     <script>
       const API_BASE = "/api";
-      let selectedCandidates = {}; // Store selected candidates by position
+      let selectedCandidates = {};
       let isStudentVerified = false;
       let allCandidates = [];
-      let allPositions = []; // Track all available positions
+      let allPositions = [];
+      let currentMatricNumber = "";
 
       // Tab navigation
       document.querySelectorAll(".tab").forEach((item) => {
         item.addEventListener("click", function () {
-          // Remove active class from all items
+          // If trying to access vote tab without verification
+          if (this.getAttribute("data-tab") === "vote" && !isStudentVerified) {
+            const alert = document.getElementById("verify-alert");
+            alert.className = "alert alert-error";
+            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> You must verify your matric number first before accessing the voting page.`;
+            alert.style.display = "flex";
+
+            // Ensure we stay on the verify tab
+            showTab("verify");
+            return;
+          }
+
           document.querySelectorAll(".tab").forEach((tab) => {
             tab.classList.remove("active");
           });
 
-          // Add active class to clicked item
           this.classList.add("active");
 
-          // Hide all tab content
           document.querySelectorAll(".tab-content").forEach((tab) => {
             tab.classList.remove("active");
           });
 
-          // Show selected tab content
           const tabId = this.getAttribute("data-tab") + "-tab";
           document.getElementById(tabId).classList.add("active");
 
-          // Load data for specific tabs
-          if (this.getAttribute("data-tab") === "vote") {
+          if (this.getAttribute("data-tab") === "vote" && isStudentVerified) {
             loadCandidates();
-            resetVotingForm();
           }
         });
       });
 
-      // Function to show a specific tab
       function showTab(tabName) {
+        // If trying to access vote tab without verification
+        if (tabName === "vote" && !isStudentVerified) {
+          const alert = document.getElementById("verify-alert");
+          alert.className = "alert alert-error";
+          alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> You must verify your matric number first before accessing the voting page.`;
+          alert.style.display = "flex";
+          return;
+        }
+
         document.querySelectorAll(".tab").forEach((tab) => {
           tab.classList.remove("active");
           if (tab.getAttribute("data-tab") === tabName) {
@@ -881,54 +777,20 @@
 
         document.getElementById(`${tabName}-tab`).classList.add("active");
 
-        if (tabName === "vote") {
+        if (tabName === "vote" && isStudentVerified) {
           loadCandidates();
-          resetVotingForm();
         }
       }
 
-      // Reset voting form
-      function resetVotingForm() {
-        document.getElementById("voter-matric-number").value = "";
-        document.getElementById("verification-badge").className =
-          "verification-badge badge-pending";
-        document.getElementById("verification-badge").textContent =
-          "Not Verified";
-        document.getElementById("verification-text").textContent =
-          "Verification status: ";
-        document.getElementById("vote-btn").disabled = true;
-        isStudentVerified = false;
-        selectedCandidates = {};
-        updateSelectionSummary();
-        updateMissingPositions();
+      function enableVotingTab() {
+        const voteTab = document.getElementById("vote-tab-button");
+        voteTab.classList.remove("disabled");
+        isStudentVerified = true;
 
-        // Show voting form, hide confirmation
-        document.getElementById("voting-section").style.display = "block";
-        document.getElementById("vote-confirmation").style.display = "none";
+        // Show voting view and hide access denied view
+        document.getElementById("access-denied-view").style.display = "none";
+        document.getElementById("voting-view").style.display = "block";
       }
-
-      // Email validation
-      document.getElementById("email").addEventListener("blur", function () {
-        const email = this.value.trim();
-        const validation = document.getElementById("email-validation");
-
-        // Basic email validation
-        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-        if (email && !emailPattern.test(email)) {
-          validation.className = "validation-message validation-invalid";
-          validation.innerHTML =
-            '<i class="fas fa-times-circle"></i> Please enter a valid email address';
-        } else if (email) {
-          validation.className = "validation-message validation-valid";
-          validation.innerHTML =
-            '<i class="fas fa-check-circle"></i> Valid email address';
-        } else {
-          validation.className = "validation-message";
-          validation.innerHTML =
-            '<i class="fas fa-info-circle"></i> Enter your email address';
-        }
-      });
 
       // Matric number validation
       document
@@ -958,241 +820,89 @@
           }
         });
 
-      // Registration form handler
+      // Matric verification form handler
       document
-        .getElementById("registration-form")
+        .getElementById("matric-verification-form")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
 
-          const formData = new FormData(e.target);
-          const data = Object.fromEntries(formData);
+          const matricNumber = document
+            .getElementById("matric-number")
+            .value.trim();
+          const verifyBtn = document.getElementById("verify-btn");
+          const originalText = verifyBtn.innerHTML;
 
-          // Basic email validation
-          const emailPattern =
-            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-          if (!emailPattern.test(data.email)) {
-            const alert = document.getElementById("register-alert");
-            alert.className = "alert alert-error";
-            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please enter a valid email address.`;
-            alert.style.display = "flex";
-            return;
-          }
-
-          // Validate matric number format
+          // Validate matric format
           if (
-            !data.matric_number.toUpperCase().startsWith("U") ||
-            (data.matric_number.length !== 8 &&
-              data.matric_number.length !== 9 &&
-              data.matric_number.length !== 10)
+            !matricNumber.toUpperCase().startsWith("U") ||
+            (matricNumber.length !== 8 &&
+              matricNumber.length !== 9 &&
+              matricNumber.length !== 10)
           ) {
-            const alert = document.getElementById("register-alert");
+            const alert = document.getElementById("verify-alert");
             alert.className = "alert alert-error";
             alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Must start with U and be exactly 8, 9 or 10 characters total.`;
             alert.style.display = "flex";
             return;
           }
 
-          const registerBtn = document.getElementById("register-btn");
-          const originalText = registerBtn.innerHTML;
-
           try {
-            // Show loading state
-            registerBtn.innerHTML =
-              '<i class="fas fa-spinner fa-spin"></i> Registering...';
-            registerBtn.disabled = true;
+            verifyBtn.innerHTML =
+              '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            verifyBtn.disabled = true;
 
-            const response = await fetch(API_BASE + "/register", {
+            const response = await fetch(API_BASE + "/verify-matric", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify(data),
+              body: JSON.stringify({ matric_number: matricNumber }),
             });
 
             const result = await response.json();
-            const alert = document.getElementById("register-alert");
+            const alert = document.getElementById("verify-alert");
 
             if (result.success) {
-              alert.className = "alert alert-success";
-              alert.innerHTML = `<i class="fas fa-check-circle"></i> ${result.message}`;
-              alert.style.display = "flex";
+              if (result.verified && result.can_vote) {
+                // Student is verified and can vote
+                alert.className = "alert alert-success";
+                alert.innerHTML = `<i class="fas fa-check-circle"></i> ${result.message}`;
+                alert.style.display = "flex";
 
-              // Clear form
-              e.target.reset();
+                currentMatricNumber = matricNumber;
+                enableVotingTab();
 
-              // Reset validation messages
-              document.getElementById("email-validation").className =
-                "validation-message";
-              document.getElementById("matric-validation").className =
-                "validation-message";
-
-              // Automatically switch to voting tab after successful registration
-              setTimeout(() => {
-                showTab("vote");
-              }, 2000);
+                // Switch to voting tab
+                setTimeout(() => {
+                  showTab("vote");
+                }, 1500);
+              } else if (result.verified && !result.can_vote) {
+                // Student already voted
+                alert.className = "alert alert-error";
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
+                alert.style.display = "flex";
+              } else {
+                // Invalid matric number
+                alert.className = "alert alert-error";
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
+                alert.style.display = "flex";
+              }
             } else {
               alert.className = "alert alert-error";
               alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
               alert.style.display = "flex";
             }
           } catch (error) {
-            const alert = document.getElementById("register-alert");
+            const alert = document.getElementById("verify-alert");
             alert.className = "alert alert-error";
             alert.innerHTML =
-              '<i class="fas fa-exclamation-circle"></i> Registration failed. Please check your connection and try again.';
+              '<i class="fas fa-exclamation-circle"></i> Verification failed. Please check your connection and try again.';
             alert.style.display = "flex";
           } finally {
-            // Restore button state
-            registerBtn.innerHTML = originalText;
-            registerBtn.disabled = false;
+            verifyBtn.innerHTML = originalText;
+            verifyBtn.disabled = false;
           }
         });
-
-      // Verify student registration when matric number is entered
-      document
-        .getElementById("voter-matric-number")
-        .addEventListener("blur", async function () {
-          const matricNumber = this.value.trim();
-
-          if (!matricNumber) {
-            document.getElementById("verification-badge").className =
-              "verification-badge badge-pending";
-            document.getElementById("verification-badge").textContent =
-              "Not Verified";
-            document.getElementById("vote-btn").disabled = true;
-            isStudentVerified = false;
-            return;
-          }
-
-          try {
-            document.getElementById("verification-badge").className =
-              "verification-badge badge-pending";
-            document.getElementById("verification-badge").textContent =
-              "Verifying...";
-
-            const response = await fetch(
-              `${API_BASE}/verify-student/${matricNumber}`
-            );
-            const result = await response.json();
-
-            if (result.success && result.registered) {
-              if (result.has_voted) {
-                document.getElementById("verification-badge").className =
-                  "verification-badge badge-error";
-                document.getElementById("verification-badge").textContent =
-                  "Already Voted";
-                document.getElementById("vote-btn").disabled = true;
-                isStudentVerified = false;
-
-                const alert = document.getElementById("vote-alert");
-                alert.className = "alert alert-error";
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> This matric number has already voted. Each student can only vote once.`;
-                alert.style.display = "flex";
-              } else {
-                document.getElementById("verification-badge").className =
-                  "verification-badge badge-verified";
-                document.getElementById("verification-badge").textContent =
-                  "Verified";
-                document.getElementById("vote-btn").disabled = false;
-                isStudentVerified = true;
-
-                // Show success message
-                const alert = document.getElementById("vote-alert");
-                alert.className = "alert alert-success";
-                alert.innerHTML = `<i class="fas fa-check-circle"></i> Student verification successful. You can now cast your vote.`;
-                alert.style.display = "flex";
-
-                // Hide alert after 3 seconds
-                setTimeout(() => {
-                  alert.style.display = "none";
-                }, 3000);
-              }
-            } else {
-              document.getElementById("verification-badge").className =
-                "verification-badge badge-pending";
-              document.getElementById("verification-badge").textContent =
-                "Not Registered";
-              document.getElementById("vote-btn").disabled = true;
-              isStudentVerified = false;
-
-              // Show error message
-              const alert = document.getElementById("vote-alert");
-              alert.className = "alert alert-error";
-              alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Matric number not found. Please register first.`;
-              alert.style.display = "flex";
-            }
-          } catch (error) {
-            document.getElementById("verification-badge").className =
-              "verification-badge badge-pending";
-            document.getElementById("verification-badge").textContent =
-              "Verification Failed";
-            document.getElementById("vote-btn").disabled = true;
-            isStudentVerified = false;
-
-            // Show error message
-            const alert = document.getElementById("vote-alert");
-            alert.className = "alert alert-error";
-            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Verification failed. Please try again.`;
-            alert.style.display = "flex";
-          }
-        });
-
-      // Update selection summary
-      function updateSelectionSummary() {
-        const summaryContent = document.getElementById("summary-content");
-        const summaryContainer = document.getElementById("selection-summary");
-
-        if (Object.keys(selectedCandidates).length === 0) {
-          summaryContainer.style.display = "none";
-          return;
-        }
-
-        let summaryHTML = "";
-        for (const [position, candidate] of Object.entries(
-          selectedCandidates
-        )) {
-          summaryHTML += `
-                    <div class="summary-item">
-                        <span class="summary-position">${position}:</span>
-                        <span class="summary-candidate">${candidate.name}</span>
-                    </div>
-                `;
-        }
-
-        summaryContent.innerHTML = summaryHTML;
-        summaryContainer.style.display = "block";
-
-        // Update the vote button state based on whether all positions are selected
-        updateVoteButtonState();
-      }
-
-      // Update missing positions display
-      function updateMissingPositions() {
-        const missingContainer = document.getElementById("missing-positions");
-        const missingList = document.getElementById("missing-list");
-
-        const missingPositions = allPositions.filter(
-          (position) => !selectedCandidates[position]
-        );
-
-        if (missingPositions.length === 0) {
-          missingContainer.style.display = "none";
-          return;
-        }
-
-        let missingHTML = "";
-        missingPositions.forEach((position) => {
-          missingHTML += `
-                    <li class="missing-item">
-                        <i class="fas fa-times-circle"></i>
-                        ${position}
-                    </li>
-                `;
-        });
-
-        missingList.innerHTML = missingHTML;
-        missingContainer.style.display = "block";
-      }
 
       // Update vote button state
       function updateVoteButtonState() {
@@ -1201,22 +911,15 @@
           (position) => selectedCandidates[position]
         );
 
-        if (isStudentVerified && allPositionsSelected) {
+        if (allPositionsSelected) {
           voteBtn.disabled = false;
           voteBtn.innerHTML =
             '<i class="fas fa-paper-plane"></i> Submit Your Vote';
         } else {
           voteBtn.disabled = true;
-          if (!allPositionsSelected) {
-            voteBtn.innerHTML =
-              '<i class="fas fa-exclamation-circle"></i> Select All Positions First';
-          } else {
-            voteBtn.innerHTML =
-              '<i class="fas fa-paper-plane"></i> Submit Your Vote';
-          }
+          voteBtn.innerHTML =
+            '<i class="fas fa-exclamation-circle"></i> Select All Positions First';
         }
-
-        updateMissingPositions();
       }
 
       // Load candidates for voting
@@ -1225,11 +928,11 @@
 
         try {
           container.innerHTML = `
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading candidates...</p>
-                    </div>
-                `;
+            <div class="loading">
+              <div class="loading-spinner"></div>
+              <p>Loading candidates...</p>
+            </div>
+          `;
 
           const response = await fetch(API_BASE + "/candidates");
           const result = await response.json();
@@ -1239,7 +942,6 @@
             container.innerHTML = "";
 
             if (allCandidates && allCandidates.length > 0) {
-              // Group candidates by position and track all positions
               const positions = {};
               allPositions = [];
 
@@ -1251,7 +953,6 @@
                 positions[candidate.position].push(candidate);
               });
 
-              // Create candidate sections for each position
               for (const [position, candidates] of Object.entries(positions)) {
                 const positionSection = document.createElement("div");
                 positionSection.className = "position-section";
@@ -1262,15 +963,13 @@
                 const isSelected = !!selectedCandidates[position];
 
                 positionHeader.innerHTML = `
-                                <span>${position}</span>
-                                <span class="position-status ${
-                                  isSelected
-                                    ? "status-completed"
-                                    : "status-required"
-                                }">
-                                    ${isSelected ? "Selected" : "Required"}
-                                </span>
-                            `;
+                  <span>${position}</span>
+                  <span class="position-status ${
+                    isSelected ? "status-completed" : "status-required"
+                  }">
+                    ${isSelected ? "Selected" : "Required"}
+                  </span>
+                `;
                 positionSection.appendChild(positionHeader);
 
                 const candidatesGrid = document.createElement("div");
@@ -1288,31 +987,20 @@
                   candidateCard.dataset.candidateId = candidate.id;
                   candidateCard.dataset.position = candidate.position;
                   candidateCard.innerHTML = `
-                                    <div class="candidate-name">${
-                                      candidate.name
-                                    }</div>
-                                    ${
-                                      candidate.faculty
-                                        ? `<div class="candidate-faculty">${candidate.faculty}</div>`
-                                        : ""
-                                    }
-                                `;
+                    <div class="candidate-name">${candidate.name}</div>
+                    ${
+                      candidate.faculty
+                        ? `<div class="candidate-faculty">${candidate.faculty}</div>`
+                        : ""
+                    }
+                  `;
 
                   candidateCard.addEventListener("click", function () {
-                    if (!isStudentVerified) {
-                      const alert = document.getElementById("vote-alert");
-                      alert.className = "alert alert-error";
-                      alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please verify your matric number first.`;
-                      alert.style.display = "flex";
-                      return;
-                    }
-
                     const position = this.dataset.position;
                     const candidateId = this.dataset.candidateId;
                     const candidateName =
                       this.querySelector(".candidate-name").textContent;
 
-                    // Deselect all candidates for this position
                     document
                       .querySelectorAll(
                         `.candidate-card[data-position="${position}"]`
@@ -1321,16 +1009,13 @@
                         card.classList.remove("selected");
                       });
 
-                    // Select this candidate
                     this.classList.add("selected");
 
-                    // Store selection
                     selectedCandidates[position] = {
                       id: candidateId,
                       name: candidateName,
                     };
 
-                    // Update position status
                     const positionHeader =
                       this.closest(".position-section").querySelector(
                         ".position-title"
@@ -1341,7 +1026,7 @@
                       ".position-status"
                     ).textContent = "Selected";
 
-                    updateSelectionSummary();
+                    updateVoteButtonState();
                   });
 
                   candidatesGrid.appendChild(candidateCard);
@@ -1351,32 +1036,31 @@
                 container.appendChild(positionSection);
               }
 
-              // Initialize missing positions display
-              updateMissingPositions();
+              updateVoteButtonState();
             } else {
               container.innerHTML = `
-                            <div class="loading">
-                                <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
-                                <h3>No Candidates Available</h3>
-                                <p>Candidates will appear here once they are registered.</p>
-                            </div>
-                        `;
+                <div class="loading">
+                  <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;"></i>
+                  <h3>No Candidates Available</h3>
+                  <p>Candidates will appear here once they are registered.</p>
+                </div>
+              `;
             }
           } else {
             throw new Error(result.message || "Failed to load candidates");
           }
         } catch (error) {
           container.innerHTML = `
-                    <div class="loading">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px; color: var(--primary-red);"></i>
-                        <h3>Unable to Load Candidates</h3>
-                        <p>There was a problem fetching the candidate list. Please try again.</p>
-                        <button class="btn" style="margin-top: 20px;" onclick="loadCandidates()">
-                            <i class="fas fa-redo"></i>
-                            Try Again
-                        </button>
-                    </div>
-                `;
+            <div class="loading">
+              <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px; color: var(--primary-red);"></i>
+              <h3>Unable to Load Candidates</h3>
+              <p>There was a problem fetching the candidate list. Please try again.</p>
+              <button class="btn" style="margin-top: 20px;" onclick="loadCandidates()">
+                <i class="fas fa-redo"></i>
+                Try Again
+              </button>
+            </div>
+          `;
         }
       }
 
@@ -1386,15 +1070,6 @@
         .addEventListener("submit", async (e) => {
           e.preventDefault();
 
-          if (!isStudentVerified) {
-            const alert = document.getElementById("vote-alert");
-            alert.className = "alert alert-error";
-            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please verify your matric number first.`;
-            alert.style.display = "flex";
-            return;
-          }
-
-          // Check if all positions have been selected
           const missingPositions = allPositions.filter(
             (position) => !selectedCandidates[position]
           );
@@ -1406,26 +1081,21 @@
             return;
           }
 
-          const matricNumber = document.getElementById(
-            "voter-matric-number"
-          ).value;
           const voteBtn = document.getElementById("vote-btn");
           const originalText = voteBtn.innerHTML;
 
           try {
-            // Show loading state
             voteBtn.innerHTML =
               '<i class="fas fa-spinner fa-spin"></i> Submitting Votes...';
             voteBtn.disabled = true;
 
-            // Submit all votes at once
             const response = await fetch(API_BASE + "/vote", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                matric_number: matricNumber,
+                matric_number: currentMatricNumber,
                 votes: selectedCandidates,
               }),
             });
@@ -1434,7 +1104,6 @@
             const alert = document.getElementById("vote-alert");
 
             if (result.success) {
-              // Hide voting form, show confirmation
               document.getElementById("voting-section").style.display = "none";
               document.getElementById("vote-confirmation").style.display =
                 "block";
@@ -1443,7 +1112,6 @@
               alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
               alert.style.display = "flex";
 
-              // Restore button state
               voteBtn.innerHTML = originalText;
               voteBtn.disabled = false;
             }
@@ -1454,7 +1122,6 @@
               '<i class="fas fa-exclamation-circle"></i> Voting failed. Please check your connection and try again.';
             alert.style.display = "flex";
 
-            // Restore button state
             voteBtn.innerHTML = originalText;
             voteBtn.disabled = false;
           }
@@ -1462,7 +1129,13 @@
 
       // Initialize the page
       document.addEventListener("DOMContentLoaded", () => {
-        // Any initialization code if needed
+        // Reset forms when returning to verification tab
+        document
+          .querySelector('.tab[data-tab="verify"]')
+          .addEventListener("click", () => {
+            document.getElementById("matric-verification-form").reset();
+            document.getElementById("verify-alert").style.display = "none";
+          });
       });
     </script>
   </body>
