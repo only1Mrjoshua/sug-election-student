@@ -885,6 +885,26 @@ def student_home():
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 2px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .position-status {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 15px;
+        }
+        
+        .status-required {
+            background: var(--light-red);
+            color: var(--primary-red);
+        }
+        
+        .status-completed {
+            background: var(--light-green);
+            color: var(--primary-green);
         }
         
         .candidates-grid {
@@ -1035,6 +1055,35 @@ def student_home():
             color: var(--primary-red);
         }
         
+        .missing-positions {
+            background: var(--light-red);
+            border: 2px solid var(--primary-red);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .missing-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--primary-red);
+        }
+        
+        .missing-list {
+            list-style-type: none;
+        }
+        
+        .missing-item {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .missing-item i {
+            color: var(--primary-red);
+        }
+        
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -1061,6 +1110,12 @@ def student_home():
             
             .candidates-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .position-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
         }
         
@@ -1181,7 +1236,7 @@ def student_home():
                 <div class="page-header">
                     <h2 class="page-title">Cast Your Vote</h2>
                     <p class="page-description">
-                        Vote for your preferred SRC candidates. Select one candidate per position. Remember, you can only vote once!
+                        Vote for your preferred SRC candidates. <strong>You must select one candidate for every position.</strong> Remember, you can only vote once!
                     </p>
                 </div>
                 
@@ -1207,10 +1262,18 @@ def student_home():
                                 <div id="summary-content"></div>
                             </div>
                             
+                            <div id="missing-positions" class="missing-positions" style="display: none;">
+                                <div class="missing-title">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    Missing Selections Required
+                                </div>
+                                <ul class="missing-list" id="missing-list"></ul>
+                            </div>
+                            
                             <div class="form-group">
                                 <label>
                                     <i class="fas fa-users"></i>
-                                    Select Your Candidates (One per Position)
+                                    Select Your Candidates (One per Position - All Required)
                                 </label>
                                 <div id="candidates-container">
                                     <div class="loading">
@@ -1222,7 +1285,7 @@ def student_home():
                             
                             <div class="info-box">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                <strong>Important:</strong> Once you submit your vote, it cannot be changed. Please review your selection carefully.
+                                <strong>Important:</strong> You must select one candidate for every position. Once you submit your vote, it cannot be changed. Please review your selection carefully.
                             </div>
                             
                             <button type="submit" class="btn" id="vote-btn" disabled>
@@ -1261,6 +1324,7 @@ def student_home():
         let selectedCandidates = {}; // Store selected candidates by position
         let isStudentVerified = false;
         let allCandidates = [];
+        let allPositions = []; // Track all available positions
         
         // Tab navigation
         document.querySelectorAll('.tab').forEach(item => {
@@ -1321,6 +1385,7 @@ def student_home():
             isStudentVerified = false;
             selectedCandidates = {};
             updateSelectionSummary();
+            updateMissingPositions();
             
             // Show voting form, hide confirmation
             document.getElementById('voting-section').style.display = 'block';
@@ -1537,6 +1602,55 @@ def student_home():
             
             summaryContent.innerHTML = summaryHTML;
             summaryContainer.style.display = 'block';
+            
+            // Update the vote button state based on whether all positions are selected
+            updateVoteButtonState();
+        }
+        
+        // Update missing positions display
+        function updateMissingPositions() {
+            const missingContainer = document.getElementById('missing-positions');
+            const missingList = document.getElementById('missing-list');
+            
+            const missingPositions = allPositions.filter(position => !selectedCandidates[position]);
+            
+            if (missingPositions.length === 0) {
+                missingContainer.style.display = 'none';
+                return;
+            }
+            
+            let missingHTML = '';
+            missingPositions.forEach(position => {
+                missingHTML += `
+                    <li class="missing-item">
+                        <i class="fas fa-times-circle"></i>
+                        ${position}
+                    </li>
+                `;
+            });
+            
+            missingList.innerHTML = missingHTML;
+            missingContainer.style.display = 'block';
+        }
+        
+        // Update vote button state
+        function updateVoteButtonState() {
+            const voteBtn = document.getElementById('vote-btn');
+            const allPositionsSelected = allPositions.every(position => selectedCandidates[position]);
+            
+            if (isStudentVerified && allPositionsSelected) {
+                voteBtn.disabled = false;
+                voteBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Your Vote';
+            } else {
+                voteBtn.disabled = true;
+                if (!allPositionsSelected) {
+                    voteBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Select All Positions First';
+                } else {
+                    voteBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Your Vote';
+                }
+            }
+            
+            updateMissingPositions();
         }
         
         // Load candidates for voting
@@ -1559,11 +1673,14 @@ def student_home():
                     container.innerHTML = '';
                     
                     if (allCandidates && allCandidates.length > 0) {
-                        // Group candidates by position
+                        // Group candidates by position and track all positions
                         const positions = {};
+                        allPositions = [];
+                        
                         allCandidates.forEach(candidate => {
                             if (!positions[candidate.position]) {
                                 positions[candidate.position] = [];
+                                allPositions.push(candidate.position);
                             }
                             positions[candidate.position].push(candidate);
                         });
@@ -1575,7 +1692,15 @@ def student_home():
                             
                             const positionHeader = document.createElement('div');
                             positionHeader.className = 'position-title';
-                            positionHeader.textContent = position;
+                            
+                            const isSelected = !!selectedCandidates[position];
+                            
+                            positionHeader.innerHTML = `
+                                <span>${position}</span>
+                                <span class="position-status ${isSelected ? 'status-completed' : 'status-required'}">
+                                    ${isSelected ? 'Selected' : 'Required'}
+                                </span>
+                            `;
                             positionSection.appendChild(positionHeader);
                             
                             const candidatesGrid = document.createElement('div');
@@ -1584,6 +1709,9 @@ def student_home():
                             candidates.forEach(candidate => {
                                 const candidateCard = document.createElement('div');
                                 candidateCard.className = 'candidate-card';
+                                if (selectedCandidates[position] && selectedCandidates[position].id === candidate.id) {
+                                    candidateCard.classList.add('selected');
+                                }
                                 candidateCard.dataset.candidateId = candidate.id;
                                 candidateCard.dataset.position = candidate.position;
                                 candidateCard.innerHTML = `
@@ -1618,6 +1746,11 @@ def student_home():
                                         name: candidateName
                                     };
                                     
+                                    // Update position status
+                                    const positionHeader = this.closest('.position-section').querySelector('.position-title');
+                                    positionHeader.querySelector('.position-status').className = 'position-status status-completed';
+                                    positionHeader.querySelector('.position-status').textContent = 'Selected';
+                                    
                                     updateSelectionSummary();
                                 });
                                 
@@ -1627,6 +1760,9 @@ def student_home():
                             positionSection.appendChild(candidatesGrid);
                             container.appendChild(positionSection);
                         }
+                        
+                        // Initialize missing positions display
+                        updateMissingPositions();
                     } else {
                         container.innerHTML = `
                             <div class="loading">
@@ -1666,10 +1802,12 @@ def student_home():
                 return;
             }
             
-            if (Object.keys(selectedCandidates).length === 0) {
+            // Check if all positions have been selected
+            const missingPositions = allPositions.filter(position => !selectedCandidates[position]);
+            if (missingPositions.length > 0) {
                 const alert = document.getElementById('vote-alert');
                 alert.className = 'alert alert-error';
-                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please select at least one candidate to vote for.`;
+                alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Please select one candidate for every position before submitting your vote.`;
                 alert.style.display = 'flex';
                 return;
             }
@@ -2262,6 +2400,7 @@ if __name__ == '__main__':
     print("   - SRC Secretary (3 candidates)")
     print("   - Senate Members for each faculty (4 faculties, 4 candidates each)")
     print("   - Representative Members (Information, Social, Sports, Security, Transport, Hostel 1, Hostel 2, Chapel)")
+    print("⚠️  VOTING REQUIREMENT: Students must select one candidate for EVERY position")
     print(f"🌐 Student Portal running at: http://0.0.0.0:{port}")
     print("🎓 Students can register and vote at this portal")
     print("🐛 Debug tools available at: /api/debug endpoints")
