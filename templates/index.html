@@ -493,6 +493,19 @@
         font-size: 1.1rem;
       }
 
+      .environment-badge {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: var(--primary-red);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        z-index: 1000;
+      }
+
       @media (max-width: 768px) {
         .container {
           padding: 10px;
@@ -519,10 +532,22 @@
           align-items: flex-start;
           gap: 10px;
         }
+        .environment-badge {
+          position: relative;
+          top: 0;
+          right: 0;
+          margin-bottom: 10px;
+          text-align: center;
+        }
       }
     </style>
   </head>
   <body>
+    <!-- Environment Indicator -->
+    <div id="environment-badge" class="environment-badge" style="display: none">
+      LOCALHOST
+    </div>
+
     <div class="container">
       <div class="header">
         <div class="university-info">
@@ -578,7 +603,7 @@
                     id="matric-number"
                     name="matric_number"
                     required
-                    placeholder="e.g., U1234567, U12345678, or U123456789"
+                    placeholder="e.g., U20241001, U20242015, or U20243025"
                     title="Must start with U and be 8, 9 or 10 characters total"
                   />
                   <div class="validation-message" id="matric-validation">
@@ -688,8 +713,27 @@
     </div>
 
     <script>
-      const API_BASE =
-        "https://obong-university-src-election-portal-muyc.onrender.com/api";
+      // Auto-detect environment and set API base URL
+      function getApiBaseUrl() {
+        const hostname = window.location.hostname;
+        const port = window.location.port;
+
+        if (hostname === "localhost" || hostname === "127.0.0.1") {
+          document.getElementById("environment-badge").textContent =
+            "LOCALHOST";
+          document.getElementById("environment-badge").style.background =
+            "#d13d39";
+          return `http://localhost:5001/api`;
+        } else {
+          document.getElementById("environment-badge").textContent = "LIVE";
+          document.getElementById("environment-badge").style.background =
+            "#2c8a45";
+          // Replace with your actual Render URL
+          return `https://obong-university-election-api.onrender.com/api`;
+        }
+      }
+
+      const API_BASE = getApiBaseUrl();
       let selectedCandidates = {};
       let isStudentVerified = false;
       let allCandidates = [];
@@ -700,15 +744,29 @@
       // Load election status on page load
       async function loadElectionStatus() {
         try {
+          console.log(
+            `🌐 Fetching election status from: ${API_BASE}/election-status`
+          );
           const response = await fetch(API_BASE + "/election-status");
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
           const result = await response.json();
 
           if (result.success) {
             currentElectionStatus = result.election_status;
             updateElectionStatusBanner();
+          } else {
+            throw new Error(result.message || "Failed to load election status");
           }
         } catch (error) {
           console.error("Failed to load election status:", error);
+          const banner = document.getElementById("election-status-banner");
+          const statusText = document.getElementById("election-status-text");
+          banner.className = "election-status ended";
+          statusText.innerHTML = `<strong>Connection Error:</strong> Unable to connect to election server. Please check your connection.`;
         }
       }
 
@@ -889,11 +947,18 @@
               '<i class="fas fa-spinner fa-spin"></i> Verifying...';
             verifyBtn.disabled = true;
 
+            console.log(
+              `🌐 Verifying matric number at: ${API_BASE}/verify-matric`
+            );
             const response = await fetch(API_BASE + "/verify-matric", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ matric_number: matricNumber }),
             });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const result = await response.json();
             const alert = document.getElementById("verify-alert");
@@ -964,7 +1029,13 @@
                     </div>
                 `;
 
+          console.log(`🌐 Fetching candidates from: ${API_BASE}/candidates`);
           const response = await fetch(API_BASE + "/candidates");
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
           const result = await response.json();
 
           if (result.success) {
@@ -1149,6 +1220,7 @@
               '<i class="fas fa-spinner fa-spin"></i> Submitting Votes...';
             voteBtn.disabled = true;
 
+            console.log(`🌐 Submitting votes to: ${API_BASE}/vote`);
             const response = await fetch(API_BASE + "/vote", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1157,6 +1229,10 @@
                 votes: selectedCandidates,
               }),
             });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const result = await response.json();
             const alert = document.getElementById("vote-alert");
@@ -1185,6 +1261,10 @@
 
       // Initialize the page
       document.addEventListener("DOMContentLoaded", () => {
+        console.log(`🚀 Election Portal Initialized`);
+        console.log(`🌐 API Base URL: ${API_BASE}`);
+        console.log(`🏠 Current Host: ${window.location.hostname}`);
+
         loadElectionStatus();
         document
           .querySelector('.tab[data-tab="verify"]')

@@ -3,16 +3,28 @@ from pymongo import MongoClient
 from datetime import datetime
 import os
 from bson.objectid import ObjectId
+from flask_cors import CORS
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # MongoDB configuration
-MONGO_URI = "mongodb+srv://only1MrJoshua:LovuLord2025@cluster0.9jqnavg.mongodb.net/election_db?retryWrites=true&w=majority"
+MONGO_URI = os.environ.get('MONGO_URI', "mongodb+srv://only1MrJoshua:LovuLord2025@cluster0.9jqnavg.mongodb.net/election_db?retryWrites=true&w=majority")
 DATABASE_NAME = "election_db"
 
 # Initialize MongoDB
-client = MongoClient(MONGO_URI)
-db = client[DATABASE_NAME]
+try:
+    client = MongoClient(MONGO_URI)
+    db = client[DATABASE_NAME]
+    logger.info("✅ Successfully connected to MongoDB")
+except Exception as e:
+    logger.error(f"❌ Failed to connect to MongoDB: {e}")
+    raise e
 
 # Collections
 voters_collection = db['voters']
@@ -44,8 +56,62 @@ VALID_MATRIC_NUMBERS = {
     "U20244021", "U20244022", "U20244023", "U20244024", "U20244025"
 }
 
+def initialize_database():
+    """Initialize database with sample data if empty"""
+    try:
+        # Check if candidates exist
+        if candidates_collection.count_documents({}) == 0:
+            test_candidates = [
+                {
+                    'name': 'John Chukwuma',
+                    'position': 'SRC President',
+                    'faculty': 'Faculty of Natural and Applied Sciences'
+                },
+                {
+                    'name': 'Sarah Johnson', 
+                    'position': 'SRC President',
+                    'faculty': 'Faculty of Social Sciences'
+                },
+                {
+                    'name': 'Michael Adebayo',
+                    'position': 'SRC Vice President',
+                    'faculty': 'Faculty of Management Sciences'
+                },
+                {
+                    'name': 'Grace Okafor',
+                    'position': 'SRC Secretary',
+                    'faculty': 'Faculty of Arts and Education'
+                },
+                {
+                    'name': 'David Mensah',
+                    'position': 'SRC Treasurer', 
+                    'faculty': 'Faculty of Natural and Applied Sciences'
+                },
+                {
+                    'name': 'Peace Eze',
+                    'position': 'SRC Treasurer',
+                    'faculty': 'Faculty of Social Sciences'
+                }
+            ]
+            candidates_collection.insert_many(test_candidates)
+            logger.info("✅ Test candidates added to database")
+        
+        # Initialize election settings
+        if election_settings_collection.count_documents({}) == 0:
+            election_settings_collection.insert_one({
+                'election_status': 'ongoing',
+                'updated_at': datetime.utcnow()
+            })
+            logger.info("✅ Election settings initialized")
+            
+    except Exception as e:
+        logger.error(f"❌ Database initialization error: {e}")
+
 def validate_matric_number(matric_number):
     """Validate matric number format"""
+    if not matric_number:
+        return False
+        
     matric_upper = matric_number.upper()
     
     if not matric_upper.startswith('U'):
@@ -68,8 +134,18 @@ def get_election_status():
             return election_settings.get('election_status', 'not_started')
         return 'not_started'
     except Exception as e:
-        print(f"❌ Error getting election status: {e}")
+        logger.error(f"❌ Error getting election status: {e}")
         return 'not_started'
+
+# Health check endpoint
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        'success': True,
+        'message': 'Obong University SRC Election API is running',
+        'timestamp': datetime.utcnow().isoformat()
+    })
 
 # Student API Routes
 @app.route('/api/election-status', methods=['GET'])
@@ -112,7 +188,7 @@ def verify_matric():
         data = request.get_json()
         matric_number = data.get('matric_number')
         
-        print(f"🔍 DEBUG: Matric verification attempt - Matric: {matric_number}, Election Status: {election_status}")
+        logger.info(f"🔍 Matric verification attempt - Matric: {matric_number}, Election Status: {election_status}")
         
         if not matric_number:
             return jsonify({
@@ -164,7 +240,7 @@ def verify_matric():
                 result = voters_collection.insert_one(voter_data)
                 voter_id = str(result.inserted_id)
                 
-                print(f"✅ DEBUG: Voter auto-registered - Matric: {matric_upper}")
+                logger.info(f"✅ Voter auto-registered - Matric: {matric_upper}")
                 
                 return jsonify({
                     'success': True,
@@ -175,7 +251,7 @@ def verify_matric():
                 })
                 
             except Exception as e:
-                print(f"❌ DEBUG: Auto-registration error - {e}")
+                logger.error(f"❌ Auto-registration error - {e}")
                 if "duplicate key" in str(e):
                     existing_voter = voters_collection.find_one({'matric_number': matric_upper})
                     if existing_voter:
@@ -192,7 +268,7 @@ def verify_matric():
                     raise e
             
     except Exception as e:
-        print(f"❌ DEBUG: Matric verification exception - {e}")
+        logger.error(f"❌ Matric verification exception - {e}")
         return jsonify({
             'success': False,
             'message': f'Verification error: {str(e)}'
@@ -253,10 +329,10 @@ def cast_vote():
         matric_number = data.get('matric_number')
         votes = data.get('votes')
         
-        print(f"🔍 DEBUG: Vote attempt received - Matric: {matric_number}, Votes: {len(votes)} positions, Election Status: {election_status}")
+        logger.info(f"🔍 Vote attempt received - Matric: {matric_number}, Votes: {len(votes)} positions, Election Status: {election_status}")
         
         if not all([matric_number, votes]) or len(votes) == 0:
-            print("❌ DEBUG: Missing required fields or no votes")
+            logger.error("❌ Missing required fields or no votes")
             return jsonify({
                 'success': False,
                 'message': 'Missing required fields or no votes selected'
@@ -265,7 +341,7 @@ def cast_vote():
         voter = voters_collection.find_one({'matric_number': matric_number.upper()})
         
         if not voter:
-            print(f"❌ DEBUG: Voter not found - Matric: {matric_number}")
+            logger.error(f"❌ Voter not found - Matric: {matric_number}")
             return jsonify({
                 'success': False,
                 'message': 'Voter not found. Please verify your matric number first.'
@@ -274,7 +350,7 @@ def cast_vote():
         voter_id = str(voter['_id'])
         
         if voter.get('has_voted', False):
-            print(f"❌ DEBUG: Voter already voted - Voter ID: {voter_id}")
+            logger.error(f"❌ Voter already voted - Voter ID: {voter_id}")
             return jsonify({
                 'success': False,
                 'message': 'You have already voted'
@@ -292,7 +368,7 @@ def cast_vote():
                         candidate_object_id = ObjectId(candidate_id)
                     except:
                         session.abort_transaction()
-                        print(f"❌ DEBUG: Invalid candidate ID format - Candidate ID: {candidate_id}")
+                        logger.error(f"❌ Invalid candidate ID format - Candidate ID: {candidate_id}")
                         return jsonify({
                             'success': False,
                             'message': f'Invalid candidate ID for {position}'
@@ -302,7 +378,7 @@ def cast_vote():
                     
                     if not candidate:
                         session.abort_transaction()
-                        print(f"❌ DEBUG: Candidate not found - Candidate ID: {candidate_id}")
+                        logger.error(f"❌ Candidate not found - Candidate ID: {candidate_id}")
                         return jsonify({
                             'success': False,
                             'message': f'Candidate not found for {position}'
@@ -323,7 +399,7 @@ def cast_vote():
                     except Exception as e:
                         if "duplicate key" in str(e):
                             session.abort_transaction()
-                            print(f"❌ DEBUG: Duplicate vote for position - Position: {position}")
+                            logger.error(f"❌ Duplicate vote for position - Position: {position}")
                             return jsonify({
                                 'success': False,
                                 'message': f'You have already voted for {position}'
@@ -339,7 +415,7 @@ def cast_vote():
                 
                 session.commit_transaction()
         
-        print(f"✅ DEBUG: All votes successfully recorded - Vote IDs: {vote_ids}")
+        logger.info(f"✅ All votes successfully recorded - Vote IDs: {vote_ids}")
         return jsonify({
             'success': True,
             'message': f'All {len(votes)} votes cast successfully!',
@@ -347,13 +423,16 @@ def cast_vote():
         })
         
     except Exception as e:
-        print(f"❌ DEBUG: Exception in cast_vote: {str(e)}")
+        logger.error(f"❌ Exception in cast_vote: {str(e)}")
         return jsonify({
             'success': False,
             'message': f'Voting error: {str(e)}'
         }), 500
 
+# Initialize database when app starts
+initialize_database()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    print("🚀 Starting Student Portal API - Obong University SRC Elections")
-    app.run(debug=False, host='0.0.0.0', port=port)
+    logger.info(f"🚀 Starting Student Portal API - Obong University SRC Elections on port {port}")
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true', host='0.0.0.0', port=port)
