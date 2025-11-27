@@ -506,6 +506,36 @@
         z-index: 1000;
       }
 
+      .voter-info {
+        background: var(--light-green);
+        border: 2px solid var(--primary-green);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 25px;
+        display: none;
+      }
+
+      .voter-info h3 {
+        color: var(--primary-green);
+        margin-bottom: 10px;
+        font-size: 1.2rem;
+      }
+
+      .voter-details {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .voter-detail {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .voter-detail strong {
+        color: var(--primary-green);
+      }
+
       @media (max-width: 768px) {
         .container {
           padding: 10px;
@@ -539,6 +569,10 @@
           margin-bottom: 10px;
           text-align: center;
         }
+        .voter-details {
+          flex-direction: column;
+          gap: 10px;
+        }
       }
     </style>
   </head>
@@ -570,7 +604,7 @@
         <div class="tabs">
           <div class="tab active" data-tab="verify">
             <i class="fas fa-id-card"></i>
-            Verify Matric Number
+            Verify Voter ID
           </div>
           <div class="tab disabled" data-tab="vote" id="vote-tab-button">
             <i class="fas fa-vote-yea"></i>
@@ -581,10 +615,10 @@
         <!-- Verification Tab -->
         <div id="verify-tab" class="tab-content active">
           <div class="page-header">
-            <h2 class="page-title">Verify Your Matric Number</h2>
+            <h2 class="page-title">Verify Your Voter ID</h2>
             <p class="page-description">
-              Enter your matric number to verify your eligibility to vote in the
-              SRC elections.
+              Enter your assigned Voter ID to verify your eligibility to vote in
+              the SRC elections.
             </p>
           </div>
 
@@ -592,32 +626,29 @@
 
           <div class="form-container">
             <div id="verification-form" class="verification-form">
-              <form id="matric-verification-form">
+              <form id="voter-verification-form">
                 <div class="form-group">
-                  <label for="matric-number">
+                  <label for="voter-id">
                     <i class="fas fa-id-card"></i>
-                    Matric Number
+                    Voter ID
                   </label>
                   <input
                     type="text"
-                    id="matric-number"
-                    name="matric_number"
+                    id="voter-id"
+                    name="voter_id"
                     required
-                    placeholder="e.g., U20241001, U20242015, or U20243025"
-                    title="Must start with U and be 8, 9 or 10 characters total"
+                    placeholder="e.g., V2024001, V2024005, etc."
+                    title="Enter your assigned Voter ID"
                   />
-                  <div class="validation-message" id="matric-validation">
+                  <div class="validation-message" id="voter-id-validation">
                     <i class="fas fa-info-circle"></i>
-                    <span
-                      >Format: Must start with U and be exactly 8, 9 or 10
-                      characters total</span
-                    >
+                    <span>Enter your assigned Voter ID (e.g., V2024001)</span>
                   </div>
                 </div>
 
                 <button type="submit" class="btn" id="verify-btn">
                   <i class="fas fa-search"></i>
-                  Verify Matric Number
+                  Verify Voter ID
                 </button>
               </form>
             </div>
@@ -633,17 +664,42 @@
             </div>
             <h3 class="access-denied-title">Access Denied</h3>
             <p class="access-denied-message">
-              You must verify your matric number first before you can access the
+              You must verify your Voter ID first before you can access the
               voting page.
             </p>
             <button class="btn" onclick="showTab('verify')">
               <i class="fas fa-arrow-left"></i>
-              Verify Matric Number
+              Verify Voter ID
             </button>
           </div>
 
           <!-- Voting View -->
           <div id="voting-view" style="display: none">
+            <!-- Voter Information Display -->
+            <div id="voter-info" class="voter-info">
+              <h3>
+                <i class="fas fa-user-check"></i> Verified Voter Information
+              </h3>
+              <div class="voter-details">
+                <div class="voter-detail">
+                  <strong>Voter ID:</strong>
+                  <span id="display-voter-id">-</span>
+                </div>
+                <div class="voter-detail">
+                  <strong>Full Name:</strong>
+                  <span id="display-voter-name">-</span>
+                </div>
+                <div class="voter-detail">
+                  <strong>Status:</strong>
+                  <span
+                    id="display-voter-status"
+                    style="color: var(--primary-green); font-weight: bold"
+                    >Verified ✓</span
+                  >
+                </div>
+              </div>
+            </div>
+
             <div class="page-header">
               <h2 class="page-title">Cast Your Vote</h2>
               <p class="page-description">
@@ -738,7 +794,8 @@
       let isStudentVerified = false;
       let allCandidates = [];
       let allPositions = [];
-      let currentMatricNumber = "";
+      let currentVoterId = "";
+      let currentVoterName = "";
       let currentElectionStatus = "not_started";
 
       // Load election status on page load
@@ -780,7 +837,7 @@
         switch (currentElectionStatus) {
           case "ongoing":
             statusText.innerHTML =
-              "<strong>Voting is currently ongoing.</strong> You can verify your matric number and cast your vote.";
+              "<strong>Voting is currently ongoing.</strong> You can verify your Voter ID and cast your vote.";
             break;
           case "paused":
             statusText.innerHTML =
@@ -802,7 +859,7 @@
           if (this.getAttribute("data-tab") === "vote" && !isStudentVerified) {
             const alert = document.getElementById("verify-alert");
             alert.className = "alert alert-error";
-            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> You must verify your matric number first before accessing the voting page.`;
+            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> You must verify your Voter ID first before accessing the voting page.`;
             alert.style.display = "flex";
             showTab("verify");
             return;
@@ -831,7 +888,7 @@
         if (tabName === "vote" && !isStudentVerified) {
           const alert = document.getElementById("verify-alert");
           alert.className = "alert alert-error";
-          alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> You must verify your matric number first before accessing the voting page.`;
+          alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> You must verify your Voter ID first before accessing the voting page.`;
           alert.style.display = "flex";
           return;
         }
@@ -854,45 +911,25 @@
         }
       }
 
-      function enableVotingTab() {
+      function enableVotingTab(voterId, voterName) {
         const voteTab = document.getElementById("vote-tab-button");
         voteTab.classList.remove("disabled");
         isStudentVerified = true;
+        currentVoterId = voterId;
+        currentVoterName = voterName;
+
+        // Update voter info display
+        document.getElementById("display-voter-id").textContent = voterId;
+        document.getElementById("display-voter-name").textContent = voterName;
+        document.getElementById("voter-info").style.display = "block";
+
         document.getElementById("access-denied-view").style.display = "none";
         document.getElementById("voting-view").style.display = "block";
       }
 
-      // Matric number validation
+      // Voter ID verification form handler
       document
-        .getElementById("matric-number")
-        .addEventListener("blur", function () {
-          const matric = this.value.trim();
-          const validation = document.getElementById("matric-validation");
-
-          if (
-            matric &&
-            (!matric.toUpperCase().startsWith("U") ||
-              (matric.length !== 8 &&
-                matric.length !== 9 &&
-                matric.length !== 10))
-          ) {
-            validation.className = "validation-message validation-invalid";
-            validation.innerHTML =
-              '<i class="fas fa-times-circle"></i> Invalid format. Must start with U and be exactly 8, 9 or 10 characters total';
-          } else if (matric) {
-            validation.className = "validation-message validation-valid";
-            validation.innerHTML =
-              '<i class="fas fa-check-circle"></i> Valid matric number format';
-          } else {
-            validation.className = "validation-message";
-            validation.innerHTML =
-              '<i class="fas fa-info-circle"></i> Format: Must start with U and be exactly 8, 9 or 10 characters total';
-          }
-        });
-
-      // Matric verification form handler
-      document
-        .getElementById("matric-verification-form")
+        .getElementById("voter-verification-form")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
 
@@ -923,21 +960,13 @@
             return;
           }
 
-          const matricNumber = document
-            .getElementById("matric-number")
-            .value.trim();
+          const voterId = document.getElementById("voter-id").value.trim();
           const verifyBtn = document.getElementById("verify-btn");
-          const originalText = verifyBtn.innerHTML;
 
-          if (
-            !matricNumber.toUpperCase().startsWith("U") ||
-            (matricNumber.length !== 8 &&
-              matricNumber.length !== 9 &&
-              matricNumber.length !== 10)
-          ) {
+          if (!voterId) {
             const alert = document.getElementById("verify-alert");
             alert.className = "alert alert-error";
-            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Invalid matric number format. Must start with U and be exactly 8, 9 or 10 characters total.`;
+            alert.innerHTML = `<i class="fas fa-exclamation-circle"></i> Voter ID is required.`;
             alert.style.display = "flex";
             return;
           }
@@ -947,13 +976,11 @@
               '<i class="fas fa-spinner fa-spin"></i> Verifying...';
             verifyBtn.disabled = true;
 
-            console.log(
-              `🌐 Verifying matric number at: ${API_BASE}/verify-matric`
-            );
-            const response = await fetch(API_BASE + "/verify-matric", {
+            console.log(`🌐 Verifying Voter ID at: ${API_BASE}/verify-voter`);
+            const response = await fetch(API_BASE + "/verify-voter", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ matric_number: matricNumber }),
+              body: JSON.stringify({ voter_id: voterId }),
             });
 
             if (!response.ok) {
@@ -968,8 +995,7 @@
                 alert.className = "alert alert-success";
                 alert.innerHTML = `<i class="fas fa-check-circle"></i> ${result.message}`;
                 alert.style.display = "flex";
-                currentMatricNumber = matricNumber;
-                enableVotingTab();
+                enableVotingTab(result.voter_id, result.voter_name);
                 setTimeout(() => {
                   showTab("vote");
                 }, 1500);
@@ -994,7 +1020,8 @@
               '<i class="fas fa-exclamation-circle"></i> Verification failed. Please check your connection and try again.';
             alert.style.display = "flex";
           } finally {
-            verifyBtn.innerHTML = originalText;
+            verifyBtn.innerHTML =
+              '<i class="fas fa-search"></i> Verify Voter ID';
             verifyBtn.disabled = false;
           }
         });
@@ -1225,7 +1252,8 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                matric_number: currentMatricNumber,
+                voter_id: currentVoterId,
+                voter_name: currentVoterName,
                 votes: selectedCandidates,
               }),
             });
@@ -1269,7 +1297,7 @@
         document
           .querySelector('.tab[data-tab="verify"]')
           .addEventListener("click", () => {
-            document.getElementById("matric-verification-form").reset();
+            document.getElementById("voter-verification-form").reset();
             document.getElementById("verify-alert").style.display = "none";
           });
       });

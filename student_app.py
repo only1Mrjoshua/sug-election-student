@@ -32,34 +32,78 @@ candidates_collection = db['candidates']
 votes_collection = db['votes']
 election_settings_collection = db['election_settings']
 
-# Valid matric numbers database
-VALID_MATRIC_NUMBERS = {
-    "U20241001", "U20241002", "U20241003", "U20241004", "U20241005",
-    "U20241006", "U20241007", "U20241008", "U20241009", "U20241010",
-    "U20241011", "U20241012", "U20241013", "U20241014", "U20241015",
-    "U20241016", "U20241017", "U20241018", "U20241019", "U20241020",
-    "U20241021", "U20241022", "U20241023", "U20241024", "U20241025",
-    "U20242001", "U20242002", "U20242003", "U20242004", "U20242005",
-    "U20242006", "U20242007", "U20242008", "U20242009", "U20242010",
-    "U20242011", "U20242012", "U20242013", "U20242014", "U20242015",
-    "U20242016", "U20242017", "U20242018", "U20242019", "U20242020",
-    "U20242021", "U20242022", "U20242023", "U20242024", "U20242025",
-    "U20243001", "U20243002", "U20243003", "U20243004", "U20243005",
-    "U20243006", "U20243007", "U20243008", "U20243009", "U20243010",
-    "U20243011", "U20243012", "U20243013", "U20243014", "U20243015",
-    "U20243016", "U20243017", "U20243018", "U20243019", "U20243020",
-    "U20243021", "U20243022", "U20243023", "U20243024", "U20243025",
-    "U20244001", "U20244002", "U20244003", "U20244004", "U20244005",
-    "U20244006", "U20244007", "U20244008", "U20244009", "U20244010",
-    "U20244011", "U20244012", "U20244013", "U20244014", "U20244015",
-    "U20244016", "U20244017", "U20244018", "U20244019", "U20244020",
-    "U20244021", "U20244022", "U20244023", "U20244024", "U20244025"
-}
-
 def initialize_database():
     """Initialize database with sample data if empty"""
     try:
-            # Check if candidates exist
+        # Check if voters exist
+        if voters_collection.count_documents({}) == 0:
+            # Sample voters with unique IDs
+            sample_voters = [
+                {
+                    "voter_id": "V2024001",
+                    "full_name": "John Chukwuma Adebayo",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024002", 
+                    "full_name": "Grace Ngozi Okoro",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024003",
+                    "full_name": "Michael Oluwaseun Bello",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024004",
+                    "full_name": "Sarah Temitope Johnson",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024005",
+                    "full_name": "David Ifeanyi Mohammed",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024006",
+                    "full_name": "Amanda Peace Williams",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024007",
+                    "full_name": "Daniel Olamide Yusuf",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024008",
+                    "full_name": "Blessing Funmi Adekunle",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024009",
+                    "full_name": "Peter Chidi Okonkwo",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                },
+                {
+                    "voter_id": "V2024010",
+                    "full_name": "Mercy Uchechi Nwosu",
+                    "has_voted": False,
+                    "registration_date": datetime.utcnow()
+                }
+            ]
+            voters_collection.insert_many(sample_voters)
+            logger.info("✅ Sample voters added to database")
+        
+        # Check if candidates exist
         if candidates_collection.count_documents({}) == 0:
             real_candidates = [
                 {
@@ -161,25 +205,6 @@ def initialize_database():
     except Exception as e:
         logger.error(f"❌ Database initialization error: {e}")
 
-def validate_matric_number(matric_number):
-    """Validate matric number format"""
-    if not matric_number:
-        return False
-        
-    matric_upper = matric_number.upper()
-    
-    if not matric_upper.startswith('U'):
-        return False
-    
-    if len(matric_upper) not in [8, 9, 10]:
-        return False
-    
-    return True
-
-def is_valid_matric(matric_number):
-    """Check if matric number is in our valid list"""
-    return matric_number.upper() in VALID_MATRIC_NUMBERS
-
 def get_election_status():
     """Get current election status from database"""
     try:
@@ -217,9 +242,9 @@ def get_election_status_api():
             'message': f'Error getting election status: {str(e)}'
         }), 500
 
-@app.route('/api/verify-matric', methods=['POST'])
-def verify_matric():
-    """Verify matric number and return student status"""
+@app.route('/api/verify-voter', methods=['POST'])
+def verify_voter():
+    """Verify voter ID and return voter status"""
     try:
         election_status = get_election_status()
         
@@ -240,89 +265,50 @@ def verify_matric():
             }), 400
         
         data = request.get_json()
-        matric_number = data.get('matric_number')
+        voter_id = data.get('voter_id')
         
-        logger.info(f"🔍 Matric verification attempt - Matric: {matric_number}, Election Status: {election_status}")
+        logger.info(f"🔍 Voter verification attempt - Voter ID: {voter_id}, Election Status: {election_status}")
         
-        if not matric_number:
+        if not voter_id:
             return jsonify({
                 'success': False,
-                'message': 'Matric number is required'
+                'message': 'Voter ID is required'
             }), 400
         
-        matric_upper = matric_number.upper()
-        if not validate_matric_number(matric_number):
-            return jsonify({
-                'success': False,
-                'message': 'Invalid matric number format. Must start with U and be exactly 8, 9 or 10 characters total'
-            }), 400
+        voter_id_upper = voter_id.upper()
         
-        if not is_valid_matric(matric_number):
+        # Find voter by voter_id
+        voter = voters_collection.find_one({'voter_id': voter_id_upper})
+        
+        if not voter:
             return jsonify({
                 'success': False,
                 'verified': False,
-                'message': 'Invalid matric number. Please check your matric number and try again.'
+                'message': 'Invalid Voter ID. Please check your Voter ID and try again.'
+            }), 404
+        
+        if voter.get('has_voted', False):
+            return jsonify({
+                'success': True,
+                'verified': True,
+                'can_vote': False,
+                'message': 'This Voter ID has already voted. Each voter can only vote once.',
+                'has_voted': True,
+                'voter_name': voter.get('full_name', '')
             })
-        
-        voter = voters_collection.find_one({'matric_number': matric_upper})
-        
-        if voter:
-            if voter.get('has_voted', False):
-                return jsonify({
-                    'success': True,
-                    'verified': True,
-                    'can_vote': False,
-                    'message': 'This matric number has already voted. Each student can only vote once.',
-                    'has_voted': True
-                })
-            else:
-                return jsonify({
-                    'success': True,
-                    'verified': True,
-                    'can_vote': True,
-                    'message': 'Matric number verified successfully. You can now vote.',
-                    'has_voted': False
-                })
         else:
-            try:
-                voter_data = {
-                    'matric_number': matric_upper,
-                    'registration_date': datetime.utcnow(),
-                    'has_voted': False
-                }
-                
-                result = voters_collection.insert_one(voter_data)
-                voter_id = str(result.inserted_id)
-                
-                logger.info(f"✅ Voter auto-registered - Matric: {matric_upper}")
-                
-                return jsonify({
-                    'success': True,
-                    'verified': True,
-                    'can_vote': True,
-                    'message': 'Matric number verified successfully. You can now vote.',
-                    'has_voted': False
-                })
-                
-            except Exception as e:
-                logger.error(f"❌ Auto-registration error - {e}")
-                if "duplicate key" in str(e):
-                    existing_voter = voters_collection.find_one({'matric_number': matric_upper})
-                    if existing_voter:
-                        return jsonify({
-                            'success': False,
-                            'message': 'Matric number already exists in system'
-                        }), 400
-                    else:
-                        return jsonify({
-                            'success': False,
-                            'message': 'Registration error. Please try again.'
-                        }), 400
-                else:
-                    raise e
+            return jsonify({
+                'success': True,
+                'verified': True,
+                'can_vote': True,
+                'message': 'Voter ID verified successfully. You can now vote.',
+                'has_voted': False,
+                'voter_name': voter.get('full_name', ''),
+                'voter_id': voter_id_upper
+            })
             
     except Exception as e:
-        logger.error(f"❌ Matric verification exception - {e}")
+        logger.error(f"❌ Voter verification exception - {e}")
         return jsonify({
             'success': False,
             'message': f'Verification error: {str(e)}'
@@ -380,28 +366,27 @@ def cast_vote():
             }), 400
         
         data = request.get_json()
-        matric_number = data.get('matric_number')
+        voter_id = data.get('voter_id')
+        voter_name = data.get('voter_name')
         votes = data.get('votes')
         
-        logger.info(f"🔍 Vote attempt received - Matric: {matric_number}, Votes: {len(votes)} positions, Election Status: {election_status}")
+        logger.info(f"🔍 Vote attempt received - Voter ID: {voter_id}, Voter: {voter_name}, Votes: {len(votes)} positions, Election Status: {election_status}")
         
-        if not all([matric_number, votes]) or len(votes) == 0:
+        if not all([voter_id, voter_name, votes]) or len(votes) == 0:
             logger.error("❌ Missing required fields or no votes")
             return jsonify({
                 'success': False,
                 'message': 'Missing required fields or no votes selected'
             }), 400
         
-        voter = voters_collection.find_one({'matric_number': matric_number.upper()})
+        voter = voters_collection.find_one({'voter_id': voter_id.upper()})
         
         if not voter:
-            logger.error(f"❌ Voter not found - Matric: {matric_number}")
+            logger.error(f"❌ Voter not found - Voter ID: {voter_id}")
             return jsonify({
                 'success': False,
-                'message': 'Voter not found. Please verify your matric number first.'
+                'message': 'Voter not found. Please verify your Voter ID first.'
             }), 404
-        
-        voter_id = str(voter['_id'])
         
         if voter.get('has_voted', False):
             logger.error(f"❌ Voter already voted - Voter ID: {voter_id}")
@@ -440,8 +425,8 @@ def cast_vote():
                     
                     vote_data = {
                         'voter_id': voter_id,
+                        'voter_name': voter_name,
                         'candidate_id': candidate_id,
-                        'matric_number': matric_number.upper(),
                         'candidate_name': candidate_name,
                         'candidate_position': position,
                         'vote_date': datetime.utcnow()
