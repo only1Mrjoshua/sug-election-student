@@ -563,3 +563,83 @@
           gap: 10px;
         }
       }
+
+      /* Developers Section */
+.developers-section {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: var(--shadow);
+  border-top: 3px solid var(--primary-yellow);
+}
+
+.developers-title {
+  text-align: center;
+  color: var(--primary-green);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.developers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.developer-card {
+  background: var(--light-gray);
+  border-radius: var(--radius);
+  padding: 15px;
+  text-align: center;
+  transition: var(--transition);
+  border: 2px solid transparent;
+}
+
+.developer-card:hover {
+  border-color: var(--primary-green);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.developer-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-green);
+  margin: 0 auto 10px;
+  background: var(--medium-gray);
+}
+
+.developer-name {
+  font-weight: 700;
+  color: var(--primary-green);
+  margin-bottom: 5px;
+  font-size: 1.1rem;
+}
+
+.developer-role {
+  color: var(--primary-red);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Responsive design for developers section */
+@media (max-width: 768px) {
+  .developers-grid {
+    grid-template-columns: 1fr;
+    max-width: 300px;
+  }
+  
+  .developer-card {
+    padding: 12px;
+  }
+}
