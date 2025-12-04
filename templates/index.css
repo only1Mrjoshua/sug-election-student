@@ -581,10 +581,12 @@ select:focus {
   background: var(--white);
   border-radius: var(--radius);
   padding: 20px;
-  margin: 20px 0;
+  margin: 20px auto 0 auto;
   box-shadow: var(--shadow);
   border-top: 3px solid var(--primary-yellow);
   transition: var(--transition);
+  max-width: 83%;
+  width: 100%;
 }
 
 .developers-title {
@@ -601,10 +603,9 @@ select:focus {
 
 .developers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(2, 1fr); /* 2 equal columns */
   gap: 20px;
-  max-width: 600px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .developer-card {
@@ -614,6 +615,12 @@ select:focus {
   text-align: center;
   transition: var(--transition);
   border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 180px;
+  width: 100%; /* Full width of grid cell */
+  box-sizing: border-box; /* Include padding in width */
 }
 
 .developer-card:hover {
@@ -623,32 +630,119 @@ select:focus {
 }
 
 .developer-image {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--primary-green);
+  border: 2px solid var(--primary-green);
   margin: 0 auto 10px;
   background: var(--medium-gray);
+}
+
+.developer-info {
+  width: 100%; /* Full width of card */
 }
 
 .developer-name {
   font-weight: 700;
   color: var(--primary-green);
   margin-bottom: 5px;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  line-height: 1.2;
+  width: 100%;
+  word-wrap: break-word;
 }
 
 .developer-role {
   color: var(--primary-red);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
+  line-height: 1.2;
+  width: 100%;
+  word-wrap: break-word;
+}
+
+/* Make cards fill full width on mobile */
+@media (max-width: 768px) {
+  .developers-section {
+    padding: 15px;
+    margin: 15px 0px;
+    max-width: 100%;
+  }
+  
+  .developers-grid {
+    grid-template-columns: 1fr; /* Single full-width column on mobile */
+    gap: 15px;
+    width: 100% !important;
+  }
+  
+  .developer-card {
+    flex-direction: row;
+    text-align: left;
+    padding: 15px;
+    min-height: auto;
+    align-items: center;
+    gap: 15px;
+    width: 100% !important; /* Full width */
+  }
+  
+  .developer-image {
+    width: 60px;
+    height: 60px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  
+  .developer-info {
+    flex: 1;
+    text-align: left;
+  }
+  
+  .developer-name {
+    font-size: 0.95rem;
+    margin-bottom: 3px;
+  }
+  
+  .developer-role {
+    font-size: 0.8rem;
+  }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+  .developers-section {
+    padding: 12px;
+  }
+  
+  .developer-card {
+    padding: 12px;
+    gap: 12px;
+    width: 100% !important;
+  }
+  
+  .developer-image {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .developer-name {
+    font-size: 0.9rem;
+  }
+  
+  .developer-role {
+    font-size: 0.75rem;
+  }
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .container {
+
+  body {
     padding: 10px;
+  }
+
+  .container {
+    padding: 2px;
   }
   .header {
     flex-direction: column;
