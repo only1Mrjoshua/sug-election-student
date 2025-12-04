@@ -6,6 +6,10 @@ from bson.objectid import ObjectId
 from flask_cors import CORS
 import logging
 
+# Import the separated data files
+from student_voters import get_sample_voters
+from student_candidates import get_sample_candidates
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,166 +37,19 @@ votes_collection = db['votes']
 election_settings_collection = db['election_settings']
 
 def initialize_database():
-    """Initialize database with sample data if empty"""
+    """Initialize database with sample data from separate files if empty"""
     try:
         # Check if voters exist
         if voters_collection.count_documents({}) == 0:
-            # Sample voters with unique IDs
-            sample_voters = [
-                {
-                    "voter_id": "V2024001",
-                    "full_name": "John Chukwuma Adebayo",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024002", 
-                    "full_name": "Grace Ngozi Okoro",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024003",
-                    "full_name": "Michael Oluwaseun Bello",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024004",
-                    "full_name": "Sarah Temitope Johnson",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024005",
-                    "full_name": "David Ifeanyi Mohammed",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024006",
-                    "full_name": "Amanda Peace Williams",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024007",
-                    "full_name": "Daniel Olamide Yusuf",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024008",
-                    "full_name": "Blessing Funmi Adekunle",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024009",
-                    "full_name": "Peter Chidi Okonkwo",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                },
-                {
-                    "voter_id": "V2024010",
-                    "full_name": "Mercy Uchechi Nwosu",
-                    "has_voted": False,
-                    "registration_date": datetime.utcnow()
-                }
-            ]
+            sample_voters = get_sample_voters()
             voters_collection.insert_many(sample_voters)
-            logger.info("✅ Sample voters added to database")
+            logger.info(f"✅ {len(sample_voters)} sample voters added to database from file")
         
         # Check if candidates exist
         if candidates_collection.count_documents({}) == 0:
-            real_candidates = [
-                {
-                    "name": "Olukunle Tomiwa Covenant",
-                    "position": "President",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Kennedy Solomon", 
-                    "position": "President",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Jeremiah Gideon Emmanuel",
-                    "position": "President",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Onwuoha Confidence Daberechi",
-                    "position": "Vice President",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Babade Beatrice Jonathan",
-                    "position": "Vice President",
-                    "faculty": "Arts and Communications",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Dimkpa Raymond Baribeebi",
-                    "position": "Financial Secretary",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Mbang Donnoble Godwin",
-                    "position": "Director of Transport",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Olukunle Titilola Oyindamola",
-                    "position": "Director of Socials",
-                    "faculty": "Management Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Alasy Clinton Ebubechukwu",
-                    "position": "Director of Socials",
-                    "faculty": "Management Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Collins Jacob",
-                    "position": "Director of Sports",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Chisom Ejims",
-                    "position": "Director of Sports",
-                    "faculty": "Management Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Davidson Lawrence",
-                    "position": "Director of Sports",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Meshach Efioke",
-                    "position": "Director of Information",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                },
-                {
-                    "name": "Abraham Raymond",
-                    "position": "Student Chaplain",
-                    "faculty": "Natural and Applied Science",
-                    "created_at": datetime.utcnow()
-                }
-            ]
+            real_candidates = get_sample_candidates()
             candidates_collection.insert_many(real_candidates)
-            logger.info("✅ Test candidates added to database")
+            logger.info(f"✅ {len(real_candidates)} test candidates added to database from file")
         
         # Initialize election settings
         if election_settings_collection.count_documents({}) == 0:
